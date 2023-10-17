@@ -23,5 +23,8 @@ class Particle {
     auto compute_angular_momentum() -> void;
     auto compute_eccentricity() -> void;
 
+    // TODO: (aver) implement operator for printing.
+    // auto operator<<(std::ostream &os);
+
   private:
 };

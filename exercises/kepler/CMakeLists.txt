@@ -8,11 +8,15 @@ project(
 set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 20)
+
 find_package(fmt)
 find_package(Eigen3)
 
 find_package(PythonLibs REQUIRED)
-include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(
+    ${PYTHON_INCLUDE_DIRS}
+    "/usr/include/python3.11"
+)
 
 add_compile_options(
     -Wall
@@ -40,12 +44,13 @@ add_compile_options(
 )
 
 add_executable(${PROJECT_NAME}
-    kepler.cpp
+    main.cpp
     particle.cpp
     ode_solver.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
+    ./includes
     ../../includes/
     ../../libs/matplotlib-cpp/
 )
@@ -54,4 +59,5 @@ target_link_libraries(${PROJECT_NAME}
     fmt::fmt
     Eigen3::Eigen
     ${PythonLibs_LIBRARIES}
+    python3.11
 )

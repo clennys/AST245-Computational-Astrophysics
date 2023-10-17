@@ -1,7 +1,7 @@
 #include "ode_solver.hpp"
 #include "particle.hpp"
 
-// #include "matplotlibcpp.h"
+#include "matplotlibcpp.h"
 
 #include <Eigen/Dense>
 #include <cmath>
@@ -12,7 +12,7 @@
 // Examples for Eigen
 // https://bitbucket.org/chris_richardson/eigen-demo/src/master/explicit.cpp
 
-// namespace plt = matplotlibcpp;
+namespace plt = matplotlibcpp;
 
 // TODO: (aver) add kepler function and fix usage of acceleration
 auto main() -> int {
@@ -36,4 +36,6 @@ auto main() -> int {
             std::cout << particle.velocity << '\n';
         }
     }
+    plt::scatter(std::vector{0.}, std::vector{0.});
+    plt::show();
 }
