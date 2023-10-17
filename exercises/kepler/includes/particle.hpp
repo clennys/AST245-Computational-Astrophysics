@@ -16,7 +16,7 @@ class Particle {
     Particle(Particle &&) = default;
     Particle(const Particle &) = default;
     Particle &operator=(Particle &&) = default;
-    Particle &operator=(const Particle &) = default;
+    Particle &operator=(const Particle &);
     ~Particle();
 
     auto compute_energy() -> void;

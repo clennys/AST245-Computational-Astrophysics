@@ -1,8 +1,22 @@
 #include "particle.hpp"
+#include <algorithm>
 
 Particle::Particle(Eigen::Vector2d pos, Eigen::Vector2d vel, double mass)
     : position(pos), velocity(vel), k_mass(mass) {}
 
+Particle &Particle::operator=(const Particle &other) {
+    if (this == &other) {
+        return *this;
+    }
+    this->position = other.position;
+    this->velocity = other.velocity;
+    this->time = other.time;
+    this->energy = other.energy;
+    // this->k_mass = other.k_mass;
+    this->eccentricity = other.eccentricity;
+    this->angular_momentum = other.angular_momentum;
+    return *this;
+}
 Particle::~Particle() {}
 
 auto Particle::compute_energy() -> void {
