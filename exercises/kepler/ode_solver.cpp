@@ -40,9 +40,10 @@ auto ODESolver::transform_vec2d(const std::vector<Particle> &particles,
 ODESolver::ODESolver(ODEScheme scheme, ODEDerivatives derivative_function,
                      double timesteps)
     : m_scheme(scheme), m_derivFunction(derivative_function),
-      k_diff_step(timesteps) {}
+      diff_step(timesteps) {}
 
-auto ODESolver::solve_system(Particle &init_particle, const size_t &period)
+auto ODESolver::solve_system(Particle &init_particle, const size_t &period,
+                             const double &k_eccentricity)
     -> std::vector<Particle> {
 
     const auto k_orbital_period =
@@ -66,7 +67,7 @@ auto ODESolver::solve_system(Particle &init_particle, const size_t &period)
 
         // update particle and time
         init_particle = new_particle;
-        current_time += this->k_diff_step;
+        current_time += this->diff_step;
     }
 
     return particles;
@@ -87,6 +88,7 @@ auto ODESolver::derive(const Particle &particle_n, double time_n) -> Particle {
 }
 auto ODESolver::derive_keplerian_orbit(const Particle &particle, double time)
     -> Particle {
+    (void)time;
     const auto new_position =
         (-this->k_GM / std::pow(particle.position.norm(), 3)) *
         particle.position;
@@ -101,6 +103,7 @@ auto ODESolver::solver_step(const Particle &particle_n, double time_n)
     -> Particle {
     switch (m_scheme) {
     case ODEScheme::RungeKutta2nd:
+        return runge_kutta_2nd_order(particle_n, time_n);
     case ODEScheme::RungeKutta4th:
     case ODEScheme::LeapFrop:
     case ODEScheme::SemiImplEuler:
@@ -114,7 +117,24 @@ auto ODESolver::explicit_euler(const Particle &particle_n, double time_n)
     -> Particle {
     auto der_particle = derive(particle_n, time_n);
     return Particle(
-        der_particle.position * this->k_diff_step + particle_n.position,
-        der_particle.velocity * this->k_diff_step + particle_n.velocity,
+        der_particle.position * this->diff_step + particle_n.position,
+        der_particle.velocity * this->diff_step + particle_n.velocity,
         der_particle.k_mass);
+}
+auto ODESolver::runge_kutta_2nd_order(const Particle &particle_n, double time_n)
+    -> Particle {
+    auto particle_1 = derive(particle_n, time_n);
+    auto particle_2 = derive(
+        Particle(particle_n.position + particle_1.position * this->diff_step,
+                 particle_n.velocity + particle_1.velocity * this->diff_step,
+                 particle_n.k_mass),
+        time_n);
+    auto derived_particle = Particle(
+        (particle_1.position + particle_2.position) / 2,
+        (particle_1.velocity + particle_2.velocity) / 2, particle_n.k_mass);
+
+    return Particle(
+        particle_n.position + derived_particle.position * this->diff_step,
+        particle_n.velocity + derived_particle.velocity * this->diff_step,
+        particle_n.k_mass);
 }

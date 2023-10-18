@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(fmt)
 find_package(Eigen3)
 
-find_package(PythonLibs REQUIRED)
+find_package(Python3 REQUIRED)
 include_directories(SYSTEM
     ${PYTHON_INCLUDE_DIRS}
     "/usr/include/python3.11"
