@@ -13,9 +13,10 @@ find_package(fmt)
 find_package(Eigen3)
 
 find_package(PythonLibs REQUIRED)
-include_directories(
+include_directories(SYSTEM
     ${PYTHON_INCLUDE_DIRS}
     "/usr/include/python3.11"
+    "../../libs/matplotlib-cpp"
 )
 
 add_compile_options(
@@ -41,6 +42,8 @@ add_compile_options(
     -Wduplicated-branches # warn if if / else branches have duplicated code
     -Wlogical-op # warn about logical operations being used where bitwise were probably wanted
     -Wuseless-cast # warn if you perform a cast to the same type
+
+    -O3
 )
 
 add_executable(${PROJECT_NAME}
@@ -52,7 +55,6 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC
     ./includes
     ../../includes/
-    ../../libs/matplotlib-cpp/
 )
 
 target_link_libraries(${PROJECT_NAME}

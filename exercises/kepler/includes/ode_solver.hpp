@@ -10,19 +10,27 @@ class ODESolver {
         ExplicitEuler
     };
     enum class ODEDerivatives { KeplerianOrbits };
+    /// Enum to hold transformation type
+    enum class TransElemem { Position, Velocity };
     // TODO: (aver) add enum class for what kind of system
 
     ODESolver(ODEScheme scheme, ODEDerivatives derivative_function,
               double timesteps);
     ODESolver(ODESolver &&) = default;
     ODESolver(const ODESolver &) = default;
-    ODESolver &operator=(ODESolver &&) = default;
-    ODESolver &operator=(const ODESolver &) = default;
+    ODESolver &operator=(ODESolver &&) = delete;
+    ODESolver &operator=(const ODESolver &) = delete;
     ~ODESolver();
 
     /// @brief Solve a an ODE system defined by the constructor
     auto solve_system(Particle &init_particle, const size_t &period)
         -> std::vector<Particle>;
+    // ============================================================================================
+    // Public Static Helper Functions
+    // ============================================================================================
+    static auto transform_vec2d(const std::vector<Particle> &particles,
+                                const TransElemem &type)
+        -> std::pair<std::vector<double>, std::vector<double>>;
 
   private:
     // ============================================================================================

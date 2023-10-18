@@ -5,9 +5,6 @@
 
 #include <Eigen/Dense>
 #include <cmath>
-#include <functional>
-#include <iostream>
-#include <ranges>
 #include <string>
 #include <vector>
 
@@ -31,35 +28,15 @@ auto main() -> int {
 
         auto particles = ode_system.solve_system(init_particle, 10);
 
-        // for (auto particle : particles) {
-        //     std::cout << "position:" << particle.position << "\n";
-        //     std::cout << "velocity:" << particle.velocity << '\n';
-        // }
+        auto transformed_positions = ODESolver::transform_vec2d(
+            particles, ODESolver::TransElemem::Position);
 
-        // we need to transform the vectors of particles into positions for
-        // plotting
-        auto transformed_x =
-            particles | std::views::transform([](const Particle &particle) {
-                return particle.position.x();
-            });
-        std::vector<double> transformed_vector_x(transformed_x.begin(),
-                                                 transformed_x.end());
 
-        auto transformed_y =
-            particles | std::views::transform([](const Particle &particle) {
-                return particle.position.y();
-            });
-        std::vector<double> transformed_vector_y(transformed_y.begin(),
-                                                 transformed_y.end());
+        plt::plot(transformed_positions.first, transformed_positions.second,
 
-        plt::plot(transformed_vector_x, transformed_vector_y,
                   std::map<std::string, std::string>{{"marker", "."}});
 
         plt::scatter(std::vector{0.}, std::vector{0.});
         plt::show();
     }
-
-    // plt::scatter(std::vector{0.}, std::vector{0.});
-    // plt::plot( std::vector{ 0., 3., }, std::vector{0., 3.});
-    // plt::show();
 }

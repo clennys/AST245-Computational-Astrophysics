@@ -25,6 +25,7 @@ class Particle {
 
     // TODO: (aver) implement operator for printing.
     // auto operator<<(std::ostream &os);
+    // TODO: (aver) also it would make sense to implement numeric operators...
 
   private:
 };
