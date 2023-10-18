@@ -9,10 +9,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(fmt)
-find_package(Eigen3)
-
+find_package(Eigen3 REQUIRED)
 find_package(Python3 REQUIRED)
+find_package(fmt)
+
 include_directories(SYSTEM
     ${PYTHON_INCLUDE_DIRS}
     "/usr/include/python3.11"
@@ -44,6 +44,9 @@ add_compile_options(
     -Wuseless-cast # warn if you perform a cast to the same type
 
     -O3
+    # -mavx2
+    -mavx512f
+    -march=native
 )
 
 add_executable(${PROJECT_NAME}
@@ -53,8 +56,9 @@ add_executable(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ./includes
-    ../../includes/
+    "./includes"
+    "../../includes"
+    "../../libs/plotcpp"
 )
 
 target_link_libraries(${PROJECT_NAME}

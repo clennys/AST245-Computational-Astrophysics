@@ -27,16 +27,18 @@ auto main() -> int {
             Eigen::Vector2d{1, 0},
             Eigen::Vector2d({0, std::sqrt(1 + eccentricity)}), 1.);
 
+        // TODO: (aver) Fix memory leak for larger periods
         auto particles =
-            ode_system.solve_system(init_particle, 10, eccentricity);
+            ode_system.solve_system(init_particle, 500, eccentricity);
 
         auto transformed_positions = ODESolver::transform_vec2d(
             particles, ODESolver::TransElemem::Position);
 
-        auto keywords =
-            std::map<std::string, std::string>{// {"marker", "."},
-                                               // {"linewidth", "3"},
-                                               {"label", "orb"}};
+        auto keywords = std::map<std::string, std::string>{
+            // {"marker", "."},
+            // {"linewidth", "3"},
+            // {"label", "orb"}
+        };
 
         plt::plot(transformed_positions.first, transformed_positions.second,
                   keywords);
