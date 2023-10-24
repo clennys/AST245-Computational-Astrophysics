@@ -4,6 +4,7 @@
 #include "matplotlibcpp.h"
 
 #include <Eigen/Dense>
+#include <chrono>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -30,9 +31,15 @@ auto main() -> int {
         // TODO: (aver) Fix memory leak for larger periods
         auto particles =
             ode_system.solve_system(init_particle, 500, eccentricity);
+        auto start = std::chrono::high_resolution_clock::now();
 
         auto transformed_positions = ODESolver::transform_vec2d(
             particles, ODESolver::TransElemem::Position);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> duration = end - start;
+        std::cout << "Execution time: " << duration.count() << " seconds"
+                  << std::endl;
 
         auto keywords = std::map<std::string, std::string>{
             // {"marker", "."},

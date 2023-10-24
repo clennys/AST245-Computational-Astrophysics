@@ -30,7 +30,7 @@ class ODESolver {
     // ============================================================================================
     static auto transform_vec2d(const std::vector<Particle> &particles,
                                 const TransElemem &type)
-        -> std::pair<std::vector<double>, std::vector<double>>;
+        -> std::pair<std::vector<double>, std::vector<double>> const;
 
   private:
     // ============================================================================================

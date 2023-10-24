@@ -1,6 +1,7 @@
 #include "ode_solver.hpp"
 
 #include <Eigen/Dense>
+#include <future>
 #include <iostream>
 #include <numbers>
 #include <ranges>
@@ -8,33 +9,40 @@
 #include <vector>
 
 #include "particle.hpp"
+
 auto ODESolver::transform_vec2d(const std::vector<Particle> &particles,
                                 const TransElemem &type)
-    -> std::pair<std::vector<double>, std::vector<double>> {
+    -> std::pair<std::vector<double>, std::vector<double>> const {
 
+    auto future1 = std::async(std::launch::async, [&]() {
+        auto transformed_x =
+            particles |
+            std::views::transform([&type](const Particle &particle) {
+                if (type == TransElemem::Position)
+                    return particle.position.x();
+                if (type == TransElemem::Velocity)
+                    return particle.velocity.x();
+            });
+        std::vector<double> transformed_vector_x(transformed_x.begin(),
+                                                 transformed_x.end());
+        return transformed_vector_x;
+    });
+    auto future2 = std::async(std::launch::async, [&]() {
+        auto transformed_y =
+            particles |
+            std::views::transform([&type](const Particle &particle) {
+                if (type == TransElemem::Position)
+                    return particle.position.y();
+                if (type == TransElemem::Velocity)
+                    return particle.velocity.y();
+            });
+        std::vector<double> transformed_vector_y(transformed_y.begin(),
+                                                 transformed_y.end());
+        return transformed_vector_y;
+    });
     // we need to transform the vectors of particles into positions for
     // plotting
-    auto transformed_x =
-        particles | std::views::transform([&type](const Particle &particle) {
-            if (type == TransElemem::Position)
-                return particle.position.x();
-            if (type == TransElemem::Velocity)
-                return particle.velocity.x();
-        });
-    std::vector<double> transformed_vector_x(transformed_x.begin(),
-                                             transformed_x.end());
-
-    auto transformed_y =
-        particles | std::views::transform([&type](const Particle &particle) {
-            if (type == TransElemem::Position)
-                return particle.position.y();
-            if (type == TransElemem::Velocity)
-                return particle.velocity.y();
-        });
-    std::vector<double> transformed_vector_y(transformed_y.begin(),
-                                             transformed_y.end());
-
-    return std::pair(transformed_vector_x, transformed_vector_y);
+    return std::pair(future1.get(), future2.get());
 }
 
 ODESolver::ODESolver(ODEScheme scheme, ODEDerivatives derivative_function,
