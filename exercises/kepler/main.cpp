@@ -4,7 +4,6 @@
 #include "matplotlibcpp.h"
 
 #include <Eigen/Dense>
-#include <chrono>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -18,6 +17,7 @@ namespace plt = matplotlibcpp;
 auto main() -> int {
     /// eccentricity 0 <= e < 1
     const auto eccentricities = {0., .8};
+    /// Timesteps recommended to be smaller for explicit Euler
     const auto timesteps = {0.001, 0.01};
 
     ODESolver ode_system(ODESolver::ODEScheme::RungeKutta2nd,
@@ -30,16 +30,13 @@ auto main() -> int {
 
         // TODO: (aver) Fix memory leak for larger periods
         auto particles =
-            ode_system.solve_system(init_particle, 500, eccentricity);
-        auto start = std::chrono::high_resolution_clock::now();
+            ode_system.solve_system(init_particle, 10, eccentricity);
+
+        std::cerr << "DEBUGPRINT[1]: main.cpp:31: particles="
+                  << particles.size() << std::endl;
 
         auto transformed_positions = ODESolver::transform_vec2d(
             particles, ODESolver::TransElemem::Position);
-
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> duration = end - start;
-        std::cout << "Execution time: " << duration.count() << " seconds"
-                  << std::endl;
 
         auto keywords = std::map<std::string, std::string>{
             // {"marker", "."},
@@ -49,9 +46,9 @@ auto main() -> int {
 
         plt::plot(transformed_positions.first, transformed_positions.second,
                   keywords);
-
+        keywords = {{"color", "orange"}};
         // center
-        plt::scatter(std::vector{0.}, std::vector{0.});
+        plt::scatter(std::vector{0.}, std::vector{0.}, 50., keywords);
         plt::show();
     }
 }
