@@ -21,12 +21,14 @@ auto main() -> int {
     const auto timesteps = {0.001, 0.01};
 
     ODESolver ode_system(ODESolver::ODEScheme::RungeKutta2nd,
-                         ODESolver::ODEDerivatives::KeplerianOrbits, 0.001);
+                         ODESolver::ODEDerivatives::KeplerianOrbits,
+                         0.001);
 
     for (auto eccentricity : eccentricities) {
         Particle init_particle(
             Eigen::Vector2d{1, 0},
-            Eigen::Vector2d({0, std::sqrt(1 + eccentricity)}), 1.);
+            Eigen::Vector2d({0, std::sqrt(1 + eccentricity)}),
+            1.);
 
         // TODO: (aver) Fix memory leak for larger periods
         auto particles =
@@ -44,7 +46,8 @@ auto main() -> int {
             // {"label", "orb"}
         };
 
-        plt::plot(transformed_positions.first, transformed_positions.second,
+        plt::plot(transformed_positions.first,
+                  transformed_positions.second,
                   keywords);
         keywords = {{"color", "orange"}};
         // center

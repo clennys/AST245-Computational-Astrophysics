@@ -22,6 +22,7 @@ auto ODESolver::transform_vec2d(const std::vector<Particle> &particles,
                     return particle.position.x();
                 if (type == TransElemem::Velocity)
                     return particle.velocity.x();
+                return 0.;
             });
         std::vector<double> transformed_vector_x(transformed_x.begin(),
                                                  transformed_x.end());
@@ -35,6 +36,7 @@ auto ODESolver::transform_vec2d(const std::vector<Particle> &particles,
                     return particle.position.y();
                 if (type == TransElemem::Velocity)
                     return particle.velocity.y();
+                return 0.;
             });
         std::vector<double> transformed_vector_y(transformed_y.begin(),
                                                  transformed_y.end());
@@ -45,12 +47,14 @@ auto ODESolver::transform_vec2d(const std::vector<Particle> &particles,
     return std::pair(future1.get(), future2.get());
 }
 
-ODESolver::ODESolver(ODEScheme scheme, ODEDerivatives derivative_function,
+ODESolver::ODESolver(ODEScheme scheme,
+                     ODEDerivatives derivative_function,
                      double timesteps)
     : m_scheme(scheme), m_derivFunction(derivative_function),
       diff_step(timesteps) {}
 
-auto ODESolver::solve_system(Particle &init_particle, const size_t &period,
+auto ODESolver::solve_system(Particle &init_particle,
+                             const size_t &period,
                              const double &k_eccentricity)
     -> std::vector<Particle> {
 
@@ -137,9 +141,10 @@ auto ODESolver::runge_kutta_2nd_order(const Particle &particle_n, double time_n)
                  particle_n.velocity + particle_1.velocity * this->diff_step,
                  particle_n.k_mass),
         time_n);
-    auto derived_particle = Particle(
-        (particle_1.position + particle_2.position) / 2,
-        (particle_1.velocity + particle_2.velocity) / 2, particle_n.k_mass);
+    auto derived_particle =
+        Particle((particle_1.position + particle_2.position) / 2,
+                 (particle_1.velocity + particle_2.velocity) / 2,
+                 particle_n.k_mass);
 
     return Particle(
         particle_n.position + derived_particle.position * this->diff_step,

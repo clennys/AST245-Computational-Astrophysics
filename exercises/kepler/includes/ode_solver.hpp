@@ -14,7 +14,8 @@ class ODESolver {
     enum class TransElemem { Position, Velocity };
     // TODO: (aver) add enum class for what kind of system
 
-    ODESolver(ODEScheme scheme, ODEDerivatives derivative_function,
+    ODESolver(ODEScheme scheme,
+              ODEDerivatives derivative_function,
               double timesteps);
     ODESolver(ODESolver &&) = default;
     ODESolver(const ODESolver &) = default;
@@ -23,7 +24,8 @@ class ODESolver {
     ~ODESolver();
 
     /// @brief Solve a an ODE system defined by the constructor
-    auto solve_system(Particle &init_particle, const size_t &period,
+    auto solve_system(Particle &init_particle,
+                      const size_t &period,
                       const double &k_eccentricity) -> std::vector<Particle>;
     // ============================================================================================
     // Public Static Helper Functions
