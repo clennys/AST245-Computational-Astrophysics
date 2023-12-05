@@ -2,6 +2,8 @@
 
 TODO
 
+## [N-Body Project](./exercises/n-body)
+
 ## Related Repositories
 
 [Simulations in Natural Sciences 1](https://github.com/arminveres/esc201-hs22)
