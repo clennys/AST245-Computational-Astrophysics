@@ -32,8 +32,7 @@ auto Particle::compute_angular_momentum() -> void {
 }
 
 auto Particle::compute_eccentricity() -> void {
-    const auto left =
-        position * (std::pow(velocity.norm(), 2) - (1 / position.norm()));
+    const auto left = position * (std::pow(velocity.norm(), 2) - (1 / position.norm()));
     const auto right = velocity * velocity.dot(position);
     this->eccentricity = (left - right).norm();
 }

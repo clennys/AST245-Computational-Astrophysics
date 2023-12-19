@@ -1,0 +1,58 @@
+#include "data.hpp"
+
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+auto Data::read_data(const std::filesystem::path &path_name)
+    -> std::optional<std::vector<Particle3D>> {
+    std::ifstream file(path_name);
+
+    if (!file.is_open()) {
+        std::cerr << "Unable to open file\n";
+        return std::nullopt;
+    }
+
+    std::string line;
+    std::vector<Particle3D> particles;
+    while (getline(file, line)) {
+        std::cout << line << '\n';
+
+        std::stringstream ss(line);
+        std::string word;
+        // we have 10 values
+        // Arrays no, Masses[i], x[i], y[i], z[i], Vx[i], Vy[i], Vz[i], softening[i], potential[i]
+        Particle3D part;
+        int i = 0;
+
+        while (ss >> word) {
+            if (i == 0) {
+                // we formally skip the array number
+            } else if (i == 1) {
+                part.mass = std::stod(word);
+            } else if (i == 2) {
+                part.position.x() = std::stod(word);
+            } else if (i == 3) {
+                part.position.y() = std::stod(word);
+            } else if (i == 4) {
+                part.position.z() = std::stod(word);
+            } else if (i == 5) {
+                part.velocity.x() = std::stod(word);
+            } else if (i == 6) {
+                part.velocity.y() = std::stod(word);
+            } else if (i == 7) {
+                part.velocity.z() = std::stod(word);
+            } else if (i == 8) {
+                part.softening = std::stod(word);
+            } else if (i == 9) {
+                part.potential = std::stod(word);
+            }
+            i++;
+        }
+    }
+    file.close();
+    return particles;
+}
