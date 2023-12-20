@@ -52,6 +52,10 @@ auto Data::read_data(const std::filesystem::path &path_name)
             }
             i++;
         }
+        // in case the file is formatted in an invalid way
+        if (i != 10) {
+            return std::nullopt;
+        }
     }
     file.close();
     return particles;
