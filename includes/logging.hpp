@@ -19,17 +19,17 @@ static constexpr std::string_view RESET = "\033[0m";
 
 } // namespace Colors
 
-inline auto dbg(const std::string_view &dbg_msg) { std::cerr << "DEBUG: " << dbg_msg << "\n"; }
+template <class T> inline auto dbg(const T &dbg_msg) { std::cerr << "DEBUG: " << dbg_msg << "\n"; }
 
-inline auto info(const std::string_view &info_msg) {
+template <class T> inline auto info(const T &info_msg) {
     std::cerr << Colors::BRIGHT_BLUE << "INFO: " << Colors::RESET << info_msg << "\n";
 }
 
-inline auto warn(const std::string_view &warn_msg) {
+template <class T> inline auto warn(const T &warn_msg) {
     std::cerr << Colors::YELLOW << "WARN: " << Colors::RESET << warn_msg << "\n";
 }
 
-inline auto err(const std::string_view &error_msg) {
+template <class T> inline auto err(const T &error_msg) {
     std::cerr << Colors::RED << "ERROR: " << Colors::RESET << error_msg << "\n";
 }
 
