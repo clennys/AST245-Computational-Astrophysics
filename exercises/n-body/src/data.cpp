@@ -19,7 +19,7 @@ auto Data::read_data(const std::filesystem::path &path_name)
     std::string line;
     std::vector<Particle3D> particles;
     while (getline(file, line)) {
-        std::cout << line << '\n';
+        // std::cout << line << '\n';
 
         std::stringstream ss(line);
         std::string word;
@@ -50,6 +50,8 @@ auto Data::read_data(const std::filesystem::path &path_name)
             } else if (i == 9) {
                 part.potential = std::stod(word);
             }
+            part.calc_orign_distance();
+            particles.push_back(part);
             i++;
         }
         // in case the file is formatted in an invalid way
