@@ -67,3 +67,7 @@ target_link_libraries(${PROJECT_NAME}
     # ${PythonLibs_LIBRARIES}
     # python3.11
 )
+target_link_options(${PROJECT_NAME} PUBLIC
+    -lmgl
+    -lmgl-qt5
+)
