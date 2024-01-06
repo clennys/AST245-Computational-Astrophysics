@@ -10,14 +10,8 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(Eigen3 REQUIRED)
-# find_package(Python3 REQUIRED)
-# find_package(fmt)
 
-include_directories(SYSTEM
-    # ${PYTHON_INCLUDE_DIRS}
-    # "/usr/include/python3.11"
-    # "../../libs/matplotlib-cpp"
-)
+# include_directories(SYSTEM)
 
 add_compile_options(
     -Wall
@@ -58,14 +52,10 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PUBLIC
     "./include"
     "../../includes"
-    # "../../libs/plotcpp"
 )
 
 target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
-    # fmt::fmt
-    # ${PythonLibs_LIBRARIES}
-    # python3.11
 )
 target_link_options(${PROJECT_NAME} PUBLIC
     -lmgl
