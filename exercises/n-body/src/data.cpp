@@ -24,7 +24,8 @@ auto Data::read_data(const std::filesystem::path &path_name)
         std::stringstream ss(line);
         std::string word;
         // we have 10 values
-        // Arrays no, Masses[i], x[i], y[i], z[i], Vx[i], Vy[i], Vz[i], softening[i], potential[i]
+        // Arrays no, Masses[i], x[i], y[i], z[i], Vx[i], Vy[i], Vz[i],
+        // softening[i], potential[i]
         Particle3D part;
         int i = 0;
 
@@ -53,6 +54,7 @@ auto Data::read_data(const std::filesystem::path &path_name)
             part.calc_orign_distance();
             particles.push_back(part);
             i++;
+            // part.print_summary();
         }
         // in case the file is formatted in an invalid way
         if (i != 10) {

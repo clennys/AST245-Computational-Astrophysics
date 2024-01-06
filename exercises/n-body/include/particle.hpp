@@ -16,6 +16,7 @@ class Particle3D {
 
     /// @brief calculate the Norm of the position vector
     auto calc_orign_distance() -> void;
+		auto print_summary() -> void;
 };
 
 /// Utility functions to do work with a `std::vector<Particle3D>`

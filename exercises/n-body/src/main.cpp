@@ -1,14 +1,14 @@
 #include "data.hpp"
 #include "logging.hpp"
 #include "particle.hpp"
+#include "types.hpp"
 
 #include <mgl2/mgl.h>
-#include <mgl2/qt.h>
 
 #include <future>
 #include <ranges>
 
-static std::vector<Particle3D> particles;
+static PartVec particles;
 
 auto plot_part(mglGraph *gr) {
     auto future_x = std::async(std::launch::async, [&]() {
@@ -74,16 +74,18 @@ auto main(int argc, char *argv[]) -> int {
 
     // auto particles = particles_opt.value();
     particles = particles_opt.value();
+    mglGraph gr;
+    plot_part(&gr);
 
-    mglQT gr(plot_part, "MathGL examples");
+    // mglGraph gr(plot_part, "MathGL examples");
 
-    auto gr_res = gr.Run();
-    if (gr_res != 0) {
-        Logging::err("MathGL failed");
-        return gr_res;
-    }
-
-    Logging::info("Successfully quit!");
+    // auto gr_res = gr.Run();
+    // if (gr_res != 0) {
+    //   Logging::err("MathGL failed");
+    //   return gr_res;
+    // }
+    //
+    // Logging::info("Successfully quit!");
     // Logging::info(Particles::get_max_distance(particles));
     return 0;
 }

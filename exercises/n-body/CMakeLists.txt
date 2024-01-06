@@ -5,14 +5,15 @@ project(
     VERSION 1.0
     LANGUAGES C CXX)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
+# set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_COMPILER "g++")
 
 find_package(Eigen3 REQUIRED)
-find_package(MathGL REQUIRED)
+# find_package(MathGL REQUIRED)
 
 add_compile_options(
     -Wall
@@ -39,16 +40,22 @@ add_compile_options(
     -Wuseless-cast # warn if you perform a cast to the same type
 
     # performance related flags
-    -O3
     # -mavx2
+    -O3
+    -mfma
     -mavx512f
     -march=native
+
+    # -O0
+    # -g3
 )
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
     src/particle.cpp
     src/data.cpp
+    src/histogram.cpp
+    src/shell.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -58,6 +65,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
-    MathGL::mgl
-    MathGL::mgl-qt
+    # MathGL::mgl
+    # MathGL::mgl-qt
+)
+target_link_options(${PROJECT_NAME} PUBLIC
+    -lmgl
+    # -lmgl-qt5
 )
