@@ -5,19 +5,14 @@ project(
     VERSION 1.0
     LANGUAGES C CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(Eigen3 REQUIRED)
-# find_package(Python3 REQUIRED)
-# find_package(fmt)
-
-include_directories(SYSTEM
-    # ${PYTHON_INCLUDE_DIRS}
-    # "/usr/include/python3.11"
-    # "../../libs/matplotlib-cpp"
-)
+find_package(MathGL REQUIRED)
 
 add_compile_options(
     -Wall
@@ -43,6 +38,7 @@ add_compile_options(
     -Wlogical-op # warn about logical operations being used where bitwise were probably wanted
     -Wuseless-cast # warn if you perform a cast to the same type
 
+    # performance related flags
     -O3
     # -mavx2
     -mavx512f
@@ -56,18 +52,12 @@ add_executable(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    "./include"
+    "include"
     "../../includes"
-    # "../../libs/plotcpp"
 )
 
 target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
-    # fmt::fmt
-    # ${PythonLibs_LIBRARIES}
-    # python3.11
-)
-target_link_options(${PROJECT_NAME} PUBLIC
-    -lmgl
-    -lmgl-qt5
+    MathGL::mgl
+    MathGL::mgl-qt
 )
