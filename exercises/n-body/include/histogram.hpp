@@ -7,7 +7,9 @@
 
 class Histogram {
   public:
-    explicit Histogram(const int no_bins, const PartVec &particles);
+    std::vector<Shell> m_shells;
+
+    explicit Histogram(const uint no_bins, const double radius, const PartVec &particles);
     Histogram(Histogram &&) = default;
     Histogram(const Histogram &) = default;
     Histogram &operator=(Histogram &&) = default;
@@ -15,7 +17,6 @@ class Histogram {
     ~Histogram();
 
   private:
-    std::vector<Shell> m_shells;
 };
 
 #endif // ! HISTOGRAM_H_
