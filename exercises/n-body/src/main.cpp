@@ -63,36 +63,37 @@ auto plot_part(mglGraph *gr) {
 
     // Draw the sphere at the origin with the specified radius
     std::vector<double> v_bin_value, v_bin_idx;
-    {
-        // gr->Sphere(mglPoint(0, 0, 0), furthest_particle.distance, "b");
-        // gr->Sphere(mglPoint(0, 0, 0), furthest_particle.distance / 2, "g");
+    { // reduced scope, so that origin is invalidated afterwards
         const mglPoint origin(0, 0, 0);
 
         for (auto &shell : hist.m_shells) {
-            // Logging::info(shell.m_particles.size());
+            // plot bin sphere
+            // TODO: (aver) adjust color and transpency, otherwise not much sense
             gr->Sphere(origin, shell.m_upper, "b");
 
-            Logging::dbg(std::format("val: {}, idx: {}", shell.m_particles.size(), shell.m_index));
+            // Logging::dbg(std::format("val: {}, idx: {}", shell.m_particles.size(),
+            // shell.m_index));
 
             // populate values for plot
             v_bin_value.emplace_back(static_cast<int>(shell.m_particles.size()));
             v_bin_idx.emplace_back(static_cast<int>(shell.m_index));
         }
     }
-    // convert values to mgl types
-    mglData bin_value = v_bin_value;
-    mglData bin_idx = v_bin_idx;
-
     gr->Alpha(false);
     gr->Dots(x, y, z, "r");
     gr->WriteFrame("plot.png");
 
+    // reset frames and set options for histogram plot
     gr->ClearFrame();
     gr->ResetFrames();
 
-    gr->SetRanges(bin_idx.Minimal(), bin_idx.Maximal(), bin_value.Minimal(), bin_value.Maximal());
+    // convert values to mgl types
+    x = v_bin_idx;
+    y = v_bin_value;
+
+    gr->SetRanges(x.Minimal(), x.Maximal(), y.Minimal(), y.Maximal());
     gr->Axis("xy");
-    gr->Bars(bin_idx, bin_value);
+    gr->Bars(x, y);
     gr->WriteFrame("histogram.png");
     return 0;
 }

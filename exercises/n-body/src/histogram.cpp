@@ -13,8 +13,8 @@ Histogram::Histogram(const uint no_bins, const double radius, const PartVec &par
 
     // setup bins/shells
     for (uint i = 0; i < no_bins; i++) {
-        // Logging::info(lower_rad);
-        // Logging::info(upper_rad);
+        // Logging::dbg(lower_rad);
+        // Logging::dbg(upper_rad);
 
         // WARN: (aver) don't do this, ends in segfault, because of double rounding operation
         // if (i == no_bins - 1) {
@@ -30,9 +30,9 @@ Histogram::Histogram(const uint no_bins, const double radius, const PartVec &par
 
     for (auto &part : particles) {
         auto it = std::find_if(m_shells.begin(), m_shells.end(), [&part](Shell &shell) {
-            // Logging::info(std::format("Working on shell lower: {}", shell.m_lower_inc));
-            // Logging::info(std::format("Working on shell upper: {}", shell.m_upper));
-            // Logging::info(std::format("Working on part: {}", part.distance));
+            // Logging::dbg(std::format("Working on shell lower: {}", shell.m_lower_inc));
+            // Logging::dbg(std::format("Working on shell upper: {}", shell.m_upper));
+            // Logging::dbg(std::format("Working on particle with distance: {}", part.distance));
             return part.distance < shell.m_upper && shell.m_lower_inc >= part.distance;
         });
 
