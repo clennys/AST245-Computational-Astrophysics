@@ -45,7 +45,7 @@ add_compile_options(
     -mfma
     -mavx512f
     -march=native
-    # -fopenmp
+    -fopenmp
 
 
     # -O0
@@ -67,7 +67,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
-    # omp
+    omp
     tbb
     mgl
     mgl-qt5

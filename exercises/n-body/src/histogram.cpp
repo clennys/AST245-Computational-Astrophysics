@@ -40,11 +40,15 @@ Histogram::Histogram(const uint no_bins, const double radius, const PartVec &par
         particles.begin(),
         particles.end(),
         [this, &shell_mutex](const Particle3D &part) {
+
             auto it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
                 return part.distance < shell.m_upper && shell.m_lower_inc >= part.distance;
             });
 
             std::lock_guard<std::mutex> guard(shell_mutex); // Protect m_shells
+            // use this loop to get total mass
+            Particles::g_total_mass += part.mass;
+
             if (it != m_shells.end()) {
                 it->m_particles.emplace_back(part);
             } else {
@@ -59,6 +63,10 @@ Histogram::Histogram(const uint no_bins, const double radius, const PartVec &par
         });
 #else
     for (const auto &part : particles) {
+
+        // use this loop to get total mass
+        Particles::g_total_mass += part.mass;
+
         auto it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
             // Logging::dbg(std::format("Working on shell lower: {}", shell.m_lower_inc));
             // Logging::dbg(std::format("Working on shell upper: {}", shell.m_upper));

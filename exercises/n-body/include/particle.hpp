@@ -23,9 +23,15 @@ class Particle3D {
 /// Utility functions to do work with a `std::vector<Particle3D>`
 namespace Particles {
 
+/// Keep track of total mass of all particles in system
+extern double g_total_mass;
+
 /// @brief Return the particle that is the furthest away
 /// @note In a running system, the distances need to be calculated at each step
 auto get_max_distance(const std::vector<Particle3D> &particles) -> Particle3D;
+
+/// Calculate the total mass and set the global variable `g_total_mass`
+auto calc_total_mass(const std::vector<Particle3D> &particles) -> void;
 } // namespace Particles
 
 #endif // ! PARTICLES_H_
