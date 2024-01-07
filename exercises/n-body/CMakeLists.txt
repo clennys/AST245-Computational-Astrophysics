@@ -45,6 +45,8 @@ add_compile_options(
     -mfma
     -mavx512f
     -march=native
+    # -fopenmp
+
 
     # -O0
     # -g3
@@ -65,10 +67,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
-    # MathGL::mgl
-    # MathGL::mgl-qt
-)
-target_link_options(${PROJECT_NAME} PUBLIC
-    -lmgl
-    # -lmgl-qt5
+    # omp
+    tbb
+    mgl
+    mgl-qt5
 )

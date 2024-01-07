@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <format>
 #include <mgl2/mgl.h>
+#include <mgl2/qt.h>
 
 #include <future>
 #include <ranges>
@@ -51,15 +52,21 @@ auto plot_part(mglGraph *gr) {
     auto y_bound = std::abs(furthest_particle.position.y());
     auto z_bound = std::abs(furthest_particle.position.z());
 
-    Histogram hist(30, furthest_particle.distance, g_particles);
+    Histogram hist(1000, furthest_particle.distance / 10, g_particles);
 
     // set plot parameters
     gr->SetSize(1920, 1080);
+
+    // set sphere 3d plot params
+    // TODO: (aver) fix plot rotation in subsequent plots
+    // or just use 2 subplots
     // gr->Rotate(50, 60);
     gr->SetRanges(-x_bound, x_bound, -y_bound, y_bound, -z_bound, z_bound);
     gr->Box();
     gr->Axis("xyz");
     gr->Alpha(true);
+
+    Logging::info("Plotting Spheres and preparing histogram...");
 
     // Draw the sphere at the origin with the specified radius
     std::vector<double> v_bin_value, v_bin_idx;
@@ -82,6 +89,7 @@ auto plot_part(mglGraph *gr) {
     gr->Alpha(false);
     gr->Dots(x, y, z, "r");
     gr->WriteFrame("plot.png");
+    Logging::info("Spheres plotted.");
 
     // reset frames and set options for histogram plot
     gr->ClearFrame();
@@ -95,6 +103,7 @@ auto plot_part(mglGraph *gr) {
     gr->Axis("xy");
     gr->Bars(x, y);
     gr->WriteFrame("histogram.png");
+    Logging::info("Histogram plotted.");
     return 0;
 }
 
@@ -110,20 +119,20 @@ auto main(int argc, char *argv[]) -> int {
         return -1;
     };
 
-    // auto particles = particles_opt.value();
     g_particles = particles_opt.value();
+
+#if 0
     mglGraph gr;
     plot_part(&gr);
+#else
+    mglQT gr(plot_part, "MathGL examples");
+    auto gr_res = gr.Run();
+    if (gr_res != 0) {
+        Logging::err("MathGL failed");
+        return gr_res;
+    }
+#endif
 
-    // mglGraph gr(plot_part, "MathGL examples");
-
-    // auto gr_res = gr.Run();
-    // if (gr_res != 0) {
-    //   Logging::err("MathGL failed");
-    //   return gr_res;
-    // }
-    //
-    // Logging::info("Successfully quit!");
-    // Logging::info(Particles::get_max_distance(particles));
+    Logging::info("Successfully quit!");
     return 0;
 }
