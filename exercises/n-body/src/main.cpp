@@ -19,7 +19,8 @@
 static PartVec g_particles;
 
 auto plot_part(mglGraph *gr) {
-    // TODO: (aver) consider moving the transformations into a separate function
+    // TODO: (aver) consider moving the transformations into a separate function to reduce
+    // recalculation on each viewport change
     auto future_x = std::async(std::launch::async, [&]() {
         auto transformed_x = g_particles | std::views::transform([&](const Particle3D &particle) {
                                  return particle.position.x();
@@ -52,8 +53,9 @@ auto plot_part(mglGraph *gr) {
     auto y_bound = std::abs(furthest_particle.position.y());
     auto z_bound = std::abs(furthest_particle.position.z());
 
-    Histogram hist(1000, furthest_particle.distance / 10, g_particles);
+    Histogram hist(1000, furthest_particle.distance, g_particles);
 
+    Logging::info(std::format("Total mass of system: {}", Particles::g_total_mass));
     // set plot parameters
     gr->SetSize(1920, 1080);
 
@@ -83,7 +85,7 @@ auto plot_part(mglGraph *gr) {
 
             // populate values for plot
             v_bin_value.emplace_back(static_cast<int>(shell.m_particles.size()));
-            v_bin_idx.emplace_back(static_cast<int>(shell.m_index));
+            v_bin_idx.emplace_back(static_cast<int>(shell.m_upper));
         }
     }
     gr->Alpha(false);
