@@ -42,7 +42,7 @@
 		mathgl
         cmake
         cmakeCurses
-		clang-tools
+		clang-tools_16
 		clang 
 		bear
       ];
