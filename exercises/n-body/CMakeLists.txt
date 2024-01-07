@@ -1,19 +1,26 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(
-    n-body
-    VERSION 1.0
-    LANGUAGES C CXX)
+# set(VCPKG_TARGET_ARCHITECTURE arm64)
+# set(VCPKG_CRT_LINKAGE dynamic)
+# set(VCPKG_LIBRARY_LINKAGE dynamic)
 
-# set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
+set(CMAKE_TOOLCHAIN_FILE "/Users/arminveres/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
+set(CMAKE_C_COMPILER gcc-13)
+set(CMAKE_CXX_COMPILER g++-13)
+
+project(n-body
+    VERSION 0.1.0
+    LANGUAGES C CXX
+)
+
+find_package(Eigen3 REQUIRED)
+find_package(MathGL2 REQUIRED)
+find_package(TBB REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS yes)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_COMPILER "g++")
-
-find_package(Eigen3 REQUIRED)
-# find_package(MathGL REQUIRED)
 
 add_compile_options(
     -Wall
@@ -42,11 +49,10 @@ add_compile_options(
     # performance related flags
     # -mavx2
     -O3
-    -mfma
-    -mavx512f
     -march=native
-    -fopenmp
-
+    # -mfma
+    # -mavx512f
+    # -fopenmp
 
     # -O0
     # -g3
@@ -62,13 +68,15 @@ add_executable(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    "include"
+    # "build/vcpkg_installed/arm64-osx/include/"
     "../../includes"
+    "include"
 )
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    $<IF:$<TARGET_EXISTS:mgl>,mgl,mgl-static>
     Eigen3::Eigen
-    mgl
-    omp
-    tbb
+    TBB::tbb
+    # omp
 )
+

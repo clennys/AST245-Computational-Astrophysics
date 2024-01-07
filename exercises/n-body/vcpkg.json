@@ -1,0 +1,9 @@
+{
+    "name": "n-body",
+    "version-string": "0.1.0",
+    "dependencies": [
+        "tbb",
+        "eigen3",
+        "mathgl"
+    ]
+}
