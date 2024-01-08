@@ -10,6 +10,8 @@ class Shell {
     double m_lower_inc;
     /// Upper range, non-inclusive
     double m_upper;
+    /// Hold the mass of all the particles in the shell
+    double m_mass = 0.;
 
     /// Hold particles that are in the shell
     PartVec m_particles;

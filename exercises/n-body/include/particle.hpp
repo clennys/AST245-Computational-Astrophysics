@@ -25,6 +25,8 @@ namespace Particles {
 
 /// Keep track of total mass of all particles in system
 extern double g_total_mass;
+extern double g_min_rad;
+extern double g_max_rad;
 
 /// @brief Return the particle that is the furthest away
 /// @note In a running system, the distances need to be calculated at each step

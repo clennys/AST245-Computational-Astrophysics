@@ -16,6 +16,8 @@ class Histogram {
     Histogram &operator=(const Histogram &) = default;
     ~Histogram();
 
+    auto calc_half_mass() -> double;
+
   private:
 };
 

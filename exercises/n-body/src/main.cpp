@@ -10,6 +10,7 @@
 #include <mgl2/qt.h>
 
 #include <future>
+#include <numbers>
 #include <ranges>
 
 /// Particles read in and used in the tasks.
@@ -17,6 +18,11 @@
 ///
 /// TODO: (aver) consider hiding this/reducing its scope
 static PartVec g_particles;
+
+auto density_hernquist(double rad, double total_mass, double scale_length) -> double {
+    return (total_mass / (2 * std::numbers::pi)) * (scale_length / rad) *
+           (1 / std::pow(rad + scale_length, 3));
+}
 
 auto plot_part(mglGraph *gr) {
     // TODO: (aver) consider moving the transformations into a separate function to reduce
@@ -53,9 +59,16 @@ auto plot_part(mglGraph *gr) {
     auto y_bound = std::abs(furthest_particle.position.y());
     auto z_bound = std::abs(furthest_particle.position.z());
 
-    Histogram hist(1000, furthest_particle.distance, g_particles);
+    Histogram hist(100'000, furthest_particle.distance, g_particles);
+    auto half_mass_rad = hist.calc_half_mass();
+    auto scale_length_a = half_mass_rad / (1 + (std::sqrt(2)));
+
+    // auto hernquist_dens_profile = density_hernquist()
 
     Logging::info(std::format("Total mass of system: {}", Particles::g_total_mass));
+    Logging::info(std::format("Half mass of system: {}", half_mass_rad));
+    Logging::info(std::format("Scaling length of system: {}", scale_length_a));
+
     // set plot parameters
     gr->SetSize(1920, 1080);
 
