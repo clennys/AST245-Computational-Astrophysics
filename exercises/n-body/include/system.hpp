@@ -9,6 +9,8 @@ class System {
   public:
     PartVec m_particles;
     double m_total_mass = 0.;
+    double m_half_mass = 0.;
+    double m_scale_length = 0.;
     double m_min_rad = 0.;
     double m_max_rad = 0.;
 
@@ -26,12 +28,19 @@ class System {
     /// @note In a running system, the distances need to be calculated at each step
     auto get_max_distance() -> Particle3D;
 
-    /// Calculate the total mass and set the global variable `g_total_mass`
-    auto calc_total_mass() -> void;
-    auto calc_half_mass(const ShellVec &shells) -> double;
+    auto calc_total_mass() const -> double;
+    auto update_total_mass() -> void;
+
+    auto calc_half_mass(const ShellVec &shells) const -> double;
+    auto update_half_mass(const ShellVec &shells) -> void;
+
+    auto calc_scale_length() const -> double;
+    auto update_scale_length() -> void;
 
     auto update_min_rad(const double rad) -> void;
     auto update_max_rad(const double rad) -> void;
+
+    auto density_hernquist(double rad) -> double;
 
   private:
 };

@@ -2,9 +2,11 @@
 #include "logging.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <format>
 #include <future>
 #include <numbers>
+#include <numeric>
 #include <ranges>
 #include <tuple>
 
@@ -55,27 +57,26 @@ auto System::get_max_distance() -> Particle3D {
 
     return *result;
 }
-auto System::calc_total_mass() -> void {
-    m_total_mass = 0.;
+auto System::calc_total_mass() const -> double {
 
-#pragma omp parallel for
-    for (const auto &part : m_particles) {
-#pragma omp atomic
-        m_total_mass += part.mass;
-    }
+    auto total_mass = std::accumulate(
+        m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
+            return sum + part.mass;
+        });
 
-    // NOTE: (aver) consider simpler omp loop
-    // std::mutex mtx;
-    // std::for_each(
-    //     std::execution::par, particles.begin(), particles.end(), [&mtx](const Particle3D &part) {
-    //         std::lock_guard<std::mutex> guard(mtx); // Protect m_shells
-    //         Particles::g_total_mass += part.mass;
-    //     });
-
+    //     auto total_mass = 0.;
+    // #pragma omp parallel for
+    //     for (const auto &part : m_particles) {
+    // #pragma omp atomic
+    //         total_mass += part.mass;
+    //     }
     Logging::info(std::format("Total mass of system: {}", m_total_mass));
-}
 
-auto System::calc_half_mass(const ShellVec &shells) -> double {
+    return total_mass;
+}
+auto System::update_total_mass() -> void { m_total_mass = calc_total_mass(); }
+
+auto System::calc_half_mass(const ShellVec &shells) const -> double {
 
     auto temp_mass = 0.;
     for (const auto &shell : shells) {
@@ -87,5 +88,18 @@ auto System::calc_half_mass(const ShellVec &shells) -> double {
     Logging::err("No half mass found... Exiting");
     std::exit(-1);
 }
+
+auto System::update_half_mass(const ShellVec &shells) -> void {
+    m_half_mass = calc_half_mass(shells);
+}
+
+auto System::calc_scale_length() const -> double { return m_half_mass / (1 / std::sqrt(2)); }
+auto System::update_scale_length() -> void { m_scale_length = calc_scale_length(); }
+
 auto System::update_min_rad(const double rad) -> void { m_min_rad = std::min(m_min_rad, rad); }
 auto System::update_max_rad(const double rad) -> void { m_max_rad = std::max(m_max_rad, rad); }
+
+auto System::density_hernquist(double rad) -> double {
+    return (m_total_mass / (2 * std::numbers::pi)) * (m_scale_length / rad) *
+           (1 / std::pow(rad + m_scale_length, 3));
+}

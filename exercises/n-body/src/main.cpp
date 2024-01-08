@@ -12,8 +12,6 @@
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
 ///
-/// TODO: (aver) consider hiding this/reducing its scope
-static PartVec g_particles;
 static System g_system;
 
 auto plot_part(mglGraph *gr) {
@@ -29,16 +27,18 @@ auto plot_part(mglGraph *gr) {
     auto y_bound = std::abs(furthest_particle.position.y());
     auto z_bound = std::abs(furthest_particle.position.z());
 
-    Histogram hist(100'000, furthest_particle.distance, g_system);
+    Histogram hist(1000, furthest_particle.distance, g_system);
 
-    auto half_mass_rad = g_system.calc_half_mass(hist.m_shells);
-    auto scale_length_a = half_mass_rad / (1 + (std::sqrt(2)));
+    // auto half_mass_rad = g_system.calc_half_mass(hist.m_shells);
+    // auto scale_length_a = half_mass_rad / (1 + (std::sqrt(2)));
+    g_system.update_half_mass(hist.m_shells);
+    g_system.update_scale_length();
 
     // auto hernquist_dens_profile = density_hernquist()
 
     Logging::info(std::format("Total mass of system: {}", g_system.m_total_mass));
-    Logging::info(std::format("Half mass of system: {}", half_mass_rad));
-    Logging::info(std::format("Scaling length of system: {}", scale_length_a));
+    Logging::info(std::format("Half mass of system: {}", g_system.m_half_mass));
+    Logging::info(std::format("Scaling length of system: {}", g_system.m_scale_length));
 
     // set plot parameters
     gr->SetSize(1920, 1080);
