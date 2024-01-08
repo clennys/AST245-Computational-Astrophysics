@@ -1,22 +1,20 @@
 #ifndef HISTOGRAM_H_
 #define HISTOGRAM_H_
 
+#include "system.hpp"
 #include "shell.hpp"
 #include "types.hpp"
-#include <vector>
 
 class Histogram {
   public:
-    std::vector<Shell> m_shells;
+    ShellVec m_shells;
 
-    explicit Histogram(const uint no_bins, const double radius, const PartVec &particles);
+    explicit Histogram(const uint no_bins, const double radius, System &p_system);
     Histogram(Histogram &&) = default;
     Histogram(const Histogram &) = default;
     Histogram &operator=(Histogram &&) = default;
     Histogram &operator=(const Histogram &) = default;
     ~Histogram();
-
-    auto calc_half_mass() -> double;
 
   private:
 };

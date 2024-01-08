@@ -2,70 +2,41 @@
 #include "histogram.hpp"
 #include "logging.hpp"
 #include "particle.hpp"
-#include "types.hpp"
+#include "system.hpp"
 
 #include <cstdlib>
 #include <format>
 #include <mgl2/mgl.h>
 #include <mgl2/qt.h>
 
-#include <future>
-#include <numbers>
-#include <ranges>
-
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
 ///
 /// TODO: (aver) consider hiding this/reducing its scope
 static PartVec g_particles;
-
-auto density_hernquist(double rad, double total_mass, double scale_length) -> double {
-    return (total_mass / (2 * std::numbers::pi)) * (scale_length / rad) *
-           (1 / std::pow(rad + scale_length, 3));
-}
+static System g_system;
 
 auto plot_part(mglGraph *gr) {
-    // TODO: (aver) consider moving the transformations into a separate function to reduce
-    // recalculation on each viewport change
-    auto future_x = std::async(std::launch::async, [&]() {
-        auto transformed_x = g_particles | std::views::transform([&](const Particle3D &particle) {
-                                 return particle.position.x();
-                             });
-        std::vector<double> transformed_vector_x(transformed_x.begin(), transformed_x.end());
-        return transformed_vector_x;
-    });
-    auto future_y = std::async(std::launch::async, [&]() {
-        auto transformed_y = g_particles | std::views::transform([&](const Particle3D &particle) {
-                                 return particle.position.y();
-                             });
-        std::vector<double> transformed_vector_y(transformed_y.begin(), transformed_y.end());
-        return transformed_vector_y;
-    });
-    auto future_z = std::async(std::launch::async, [&]() {
-        auto transformed_z = g_particles | std::views::transform([&](const Particle3D &particle) {
-                                 return particle.position.z();
-                             });
-        std::vector<double> transformed_vector_z(transformed_z.begin(), transformed_z.end());
-        return transformed_vector_z;
-    });
+    auto trans_vec = g_system.transform_vectors();
 
-    mglData x = future_x.get();
-    mglData y = future_y.get();
-    mglData z = future_z.get();
+    mglData x = std::get<0>(trans_vec);
+    mglData y = std::get<1>(trans_vec);
+    mglData z = std::get<2>(trans_vec);
 
-    auto furthest_particle = Particles::get_max_distance(g_particles);
+    auto furthest_particle = g_system.get_max_distance();
 
     auto x_bound = std::abs(furthest_particle.position.x());
     auto y_bound = std::abs(furthest_particle.position.y());
     auto z_bound = std::abs(furthest_particle.position.z());
 
-    Histogram hist(100'000, furthest_particle.distance, g_particles);
-    auto half_mass_rad = hist.calc_half_mass();
+    Histogram hist(100'000, furthest_particle.distance, g_system);
+
+    auto half_mass_rad = g_system.calc_half_mass(hist.m_shells);
     auto scale_length_a = half_mass_rad / (1 + (std::sqrt(2)));
 
     // auto hernquist_dens_profile = density_hernquist()
 
-    Logging::info(std::format("Total mass of system: {}", Particles::g_total_mass));
+    Logging::info(std::format("Total mass of system: {}", g_system.m_total_mass));
     Logging::info(std::format("Half mass of system: {}", half_mass_rad));
     Logging::info(std::format("Scaling length of system: {}", scale_length_a));
 
@@ -134,9 +105,12 @@ auto main(int argc, char *argv[]) -> int {
         return -1;
     };
 
-    g_particles = particles_opt.value();
+    // TODO: (aver) either instantiate / read in the particles inside the System class or pass the
+    // particle vector to the constructor
+    g_system = System();
+    g_system.m_particles = particles_opt.value();
 
-#if 0
+#if 1
     mglGraph gr;
     plot_part(&gr);
 #else

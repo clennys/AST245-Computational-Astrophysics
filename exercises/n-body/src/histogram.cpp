@@ -2,6 +2,7 @@
 #include "logging.hpp"
 #include "particle.hpp"
 #include "shell.hpp"
+#include "system.hpp"
 #include "types.hpp"
 
 #include <algorithm>
@@ -10,7 +11,8 @@
 #include <format>
 #include <mutex>
 
-Histogram::Histogram(const uint no_bins, const double radius, const PartVec &particles) {
+Histogram::Histogram(const uint no_bins, const double radius, System &p_system) {
+
     // WARN: (aver) Addded one to radious to securely place all particles into shells later on
     auto bin_radius = (radius + 1) / static_cast<int>(no_bins);
     auto lower_rad = 0.;
@@ -34,37 +36,42 @@ Histogram::Histogram(const uint no_bins, const double radius, const PartVec &par
 
     std::for_each(
         std::execution::par,
-        particles.begin(),
-        particles.end(),
-        [this, &shell_mutex](const Particle3D &part) {
-            auto it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
-                return part.distance < shell.m_upper && shell.m_lower_inc >= part.distance;
-            });
+        p_system.m_particles.begin(),
+        p_system.m_particles.end(),
+        [this, &shell_mutex, &p_system](const Particle3D &part) {
+            // use this loop to get total mass
+            p_system.m_total_mass += part.mass;
+            p_system.update_min_rad(part.distance);
+
+            auto shell_it =
+                std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
+                    return part.distance < shell.m_upper && shell.m_lower_inc >= part.distance;
+                });
 
             std::lock_guard<std::mutex> guard(shell_mutex); // Protect m_shells
             // use this loop to get total mass
-            Particles::g_total_mass += part.mass;
+            p_system.m_total_mass += part.mass;
 
-            if (it != m_shells.end()) {
-                it->m_particles.emplace_back(part);
+            if (shell_it != m_shells.end()) {
+                shell_it->m_particles.emplace_back(part);
+                shell_it->m_mass += part.mass;
             } else {
                 // handle the case, where a particle is not placed into any of the shells...
                 Logging::err(std::format("Particle with distance: {}, was not placed into a "
                                          "shell.\n\tShell bound: [{}, {})",
                                          part.distance,
-                                         it->m_lower_inc,
-                                         it->m_upper));
-                // std::exit(-1);
+                                         shell_it->m_lower_inc,
+                                         shell_it->m_upper));
             }
         });
 #else
-    for (const auto &part : particles) {
+    for (const auto &part : p_system.m_particles) {
 
         // use this loop to get total mass
-        Particles::g_total_mass += part.mass;
-        Particles::g_min_rad = std::min(Particles::g_min_rad, part.distance);
+        p_system.m_total_mass += part.mass;
+        p_system.update_min_rad(part.distance);
         // this is calculated before calling the histogram constructor
-        // Particles::g_max_rad = std::max(Particles::g_max_rad, part.distance);
+        // p_system.update_max_rad(part.distance);
 
         auto shell_it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
             // Logging::dbg(std::format("Working on shell lower: {}", shell.m_lower_inc));
@@ -91,17 +98,6 @@ Histogram::Histogram(const uint no_bins, const double radius, const PartVec &par
 #endif
 
     Logging::info("...Particles emplaced!");
-}
-auto Histogram::calc_half_mass() -> double {
-    auto temp_mass = 0.;
-    for (const auto &shell : m_shells) {
-        if (temp_mass >= Particles::g_total_mass * 0.5) {
-            return temp_mass;
-        }
-        temp_mass += shell.m_mass;
-    }
-    Logging::err("No half mass found... Exiting");
-    std::exit(-1);
 }
 
 Histogram::~Histogram() {}

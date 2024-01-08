@@ -1,5 +1,7 @@
-#ifndef SHELL_H_
-#define SHELL_H_
+#ifndef COMPASTRO_SHELL_H_
+#define COMPASTRO_SHELL_H_
+
+#include "particle.hpp"
 #include "types.hpp"
 
 class Shell {
@@ -26,4 +28,6 @@ class Shell {
   private:
 };
 
-#endif // ! SHELL_H_
+using ShellVec = std::vector<Shell>;
+
+#endif // ! COMPASTRO_SHELL_H_

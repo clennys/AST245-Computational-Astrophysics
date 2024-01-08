@@ -58,6 +58,7 @@ add_executable(${PROJECT_NAME}
     src/data.cpp
     src/histogram.cpp
     src/shell.cpp
+    src/system.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
