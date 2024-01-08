@@ -71,7 +71,7 @@ Histogram::Histogram(const uint no_bins, const double radius, System &p_system) 
         p_system.m_total_mass += part.mass;
         p_system.update_min_rad(part.distance);
         // this is calculated before calling the histogram constructor
-        // p_system.update_max_rad(part.distance);
+        p_system.update_max_rad(part.distance);
 
         auto shell_it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
             // Logging::dbg(std::format("Working on shell lower: {}", shell.m_lower_inc));
