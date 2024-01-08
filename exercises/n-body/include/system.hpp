@@ -28,20 +28,30 @@ class System {
     /// @note In a running system, the distances need to be calculated at each step
     auto get_max_distance() -> Particle3D;
 
-    auto calc_total_mass() const -> double;
+    /// Calculate and return the total mass inside the system
+    [[nodiscard]] auto calc_total_mass() const -> double;
+    /// Calculate and set the total mass variable
     auto update_total_mass() -> void;
 
-    auto calc_half_mass(const ShellVec &shells) const -> double;
+    /// Calculate the half mass and return it
+    [[nodiscard]] auto calc_half_mass(const ShellVec &shells) const -> double;
+    /// Calculate the half mass and set the half mass member value
     auto update_half_mass(const ShellVec &shells) -> void;
 
-    auto calc_scale_length() const -> double;
+    /// Calculate the scale length and return it
+    [[nodiscard]] auto calc_scale_length() const -> double;
+    /// Calculate the scale length and set its member variable
     auto update_scale_length() -> void;
 
+    /// update the minimal radius by comparing it the the one passed to it
     auto update_min_rad(const double rad) -> void;
+    /// update the maximal radius by comparing it the the one passed to it
     auto update_max_rad(const double rad) -> void;
 
+    /// return the analytical density profile within a radius for Hernquist
     auto density_hernquist(double rad) -> double;
 
+  /// Return the mass found within a radius, not using `Histogram` or `Shells`
     auto get_constrained_mass(const double rad) -> double;
 
   private:
