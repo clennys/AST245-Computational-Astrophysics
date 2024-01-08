@@ -42,6 +42,8 @@ class System {
 
     auto density_hernquist(double rad) -> double;
 
+    auto get_constrained_mass(const double rad) -> double;
+
   private:
 };
 

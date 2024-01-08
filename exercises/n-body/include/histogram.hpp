@@ -1,8 +1,8 @@
 #ifndef HISTOGRAM_H_
 #define HISTOGRAM_H_
 
-#include "system.hpp"
 #include "shell.hpp"
+#include "system.hpp"
 #include "types.hpp"
 
 class Histogram {

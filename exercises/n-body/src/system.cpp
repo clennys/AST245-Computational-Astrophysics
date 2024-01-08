@@ -1,5 +1,6 @@
 #include "system.hpp"
 #include "logging.hpp"
+#include "particle.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -99,7 +100,17 @@ auto System::update_scale_length() -> void { m_scale_length = calc_scale_length(
 auto System::update_min_rad(const double rad) -> void { m_min_rad = std::min(m_min_rad, rad); }
 auto System::update_max_rad(const double rad) -> void { m_max_rad = std::max(m_max_rad, rad); }
 
-auto System::density_hernquist(double rad) -> double {
+auto System::density_hernquist(const double rad) -> double {
     return (m_total_mass / (2 * std::numbers::pi)) * (m_scale_length / rad) *
            (1 / std::pow(rad + m_scale_length, 3));
+}
+
+auto System::get_constrained_mass(const double rad) -> double {
+    return std::accumulate(
+        m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
+            if (part.distance <= rad) {
+                return sum + part.mass;
+            }
+            return 0.;
+        });
 }

@@ -4,10 +4,12 @@
 #include "particle.hpp"
 #include "system.hpp"
 
+#include <cmath>
 #include <cstdlib>
 #include <format>
 #include <mgl2/mgl.h>
 #include <mgl2/qt.h>
+#include <numbers>
 
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
