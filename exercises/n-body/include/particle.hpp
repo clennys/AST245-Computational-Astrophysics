@@ -12,8 +12,10 @@ class Particle3D {
     double distance;
     double mass;
 
-    /// Calculate the Norm of the position vector and set the value
-    auto calc_orign_distance() -> void;
+    /// Calculate the Norm of the position vector and return it
+    auto calc_origin_dist() -> double;
+    /// Internally calculate and set member variable
+    auto update_origin_dist() -> void;
 
     /// Print a summary of the particle properties
     auto print_summary() const -> void;
