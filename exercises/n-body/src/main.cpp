@@ -1,4 +1,3 @@
-#include "data.hpp"
 #include "histogram.hpp"
 #include "logging.hpp"
 #include "particle.hpp"
@@ -9,7 +8,6 @@
 #include <format>
 #include <mgl2/mgl.h>
 #include <mgl2/qt.h>
-#include <numbers>
 
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
@@ -101,16 +99,7 @@ auto main(int argc, char *argv[]) -> int {
         return -1;
     }
 
-    auto particles_opt = Data::read_data(argv[1]);
-    if (not particles_opt.has_value()) {
-        Logging::err(std::format("Error while reading file: {}", argv[1]));
-        return -1;
-    };
-
-    // TODO: (aver) either instantiate / read in the particles inside the System class or pass the
-    // particle vector to the constructor
-    g_system = System();
-    g_system.m_particles = particles_opt.value();
+    g_system = System(argv[1]);
 
 #if 1
     mglGraph gr;

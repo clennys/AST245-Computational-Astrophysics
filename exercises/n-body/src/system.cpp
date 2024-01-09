@@ -1,4 +1,5 @@
 #include "system.hpp"
+#include "data.hpp"
 #include "logging.hpp"
 #include "particle.hpp"
 
@@ -11,8 +12,17 @@
 #include <ranges>
 #include <tuple>
 
-System::System() {}
+System::System(const std::string_view &path_name) {
+    auto particles_opt = Data::read_data(path_name);
+    if (not particles_opt.has_value()) {
+        Logging::err(std::format("Error while reading file: {}", path_name));
+        std::exit(-1);
+    };
+    m_particles = particles_opt.value();
+}
 
+// TODO: (aver) Empty constructor needed for later global initialization
+System::System() {}
 System::~System() {}
 
 auto System::transform_vectors()

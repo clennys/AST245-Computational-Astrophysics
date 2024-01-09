@@ -1,7 +1,6 @@
 #ifndef COMPASTRO_SYSTEM_H_
 #define COMPASTRO_SYSTEM_H_
 
-// #include "types.hpp"
 #include "particle.hpp"
 #include "shell.hpp"
 
@@ -13,6 +12,8 @@ class System {
     double m_scale_length = 0.;
     double m_min_rad = 0.;
     double m_max_rad = 0.;
+
+    explicit System(const std::string_view &path_name);
 
     System();
     System(System &&) = default;
@@ -51,7 +52,7 @@ class System {
     /// return the analytical density profile within a radius for Hernquist
     auto density_hernquist(double rad) -> double;
 
-  /// Return the mass found within a radius, not using `Histogram` or `Shells`
+    /// Return the mass found within a radius, not using `Histogram` or `Shells`
     auto get_constrained_mass(const double rad) -> double;
 
   private:
