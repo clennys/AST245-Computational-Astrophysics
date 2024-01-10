@@ -1,8 +1,8 @@
 #include "data.hpp"
+#include "logging.hpp"
 
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -12,15 +12,13 @@ auto Data::read_data(const std::filesystem::path &path_name)
     std::ifstream file(path_name);
 
     if (!file.is_open()) {
-        std::cerr << "Unable to open file\n";
+        Logging::err("Unable to open file");
         return std::nullopt;
     }
 
     std::string line;
     std::vector<Particle3D> particles;
     while (getline(file, line)) {
-        // std::cout << line << '\n';
-
         std::stringstream ss(line);
         std::string word;
         // we have 10 values

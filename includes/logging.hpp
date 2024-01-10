@@ -1,13 +1,13 @@
 #ifndef LOG_H_
 #define LOG_H_
 
+#include <format>
 #include <iostream>
 #include <string_view>
 
 /**
- * TODO: (aver) 
+ * TODO: (aver)
  * - add timing to loggin
- * - add std::format support (turned out to be more difficult than I though)
  */
 
 namespace Logging {
@@ -21,18 +21,23 @@ static constexpr std::string_view RESET = "\033[0m";
 
 } // namespace Colors
 
-template <class T> auto dbg(const T &dbg_msg) { std::cout << "[ DEBUG ]: " << dbg_msg << "\n"; }
-
-template <class T> auto info(const T &info_msg) {
-    std::cout << Colors::BRIGHT_BLUE << "[ INFO ]: " << Colors::RESET << info_msg << "\n";
+template <class... Args> auto dbg(std::format_string<Args...> fmt, Args &&...args) {
+    std::cout << "[ DEBUG ]: " << std::format(fmt, std::forward<Args>(args)...) << "\n";
 }
 
-template <class T> auto warn(const T &warn_msg) {
-    std::cerr << Colors::YELLOW << "[ WARN ]: " << Colors::RESET << warn_msg << "\n";
+template <class... Args> auto info(std::format_string<Args...> fmt, Args &&...args) {
+    std::cout << Colors::BRIGHT_BLUE << "[ INFO ]: " << Colors::RESET
+              << std::format(fmt, std::forward<Args>(args)...) << "\n";
 }
 
-template <class T> auto err(const T &error_msg) {
-    std::cerr << Colors::RED << "[ ERROR ]: " << Colors::RESET << error_msg << "\n";
+template <class... Args> auto warn(std::format_string<Args...> fmt, Args &&...args) {
+    std::cerr << Colors::YELLOW << "[ WARN ]: " << Colors::RESET
+              << std::format(fmt, std::forward<Args>(args)...) << "\n";
+}
+
+template <class... Args> auto err(std::format_string<Args...> fmt, Args &&...args) {
+    std::cerr << Colors::RED << "[ ERROR ]: " << Colors::RESET
+              << std::format(fmt, std::forward<Args>(args)...) << "\n";
 }
 
 } // namespace Logging

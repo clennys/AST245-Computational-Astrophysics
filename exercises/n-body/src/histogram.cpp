@@ -86,11 +86,11 @@ Histogram::Histogram(const uint no_bins, const double radius, System &p_system) 
             shell_it->m_mass += part.mass;
         } else {
             // handle the case, where a particle is not placed into any of the shells...
-            Logging::err(std::format(
+            Logging::err(
                 "Particle with distance: {}, was not placed into a shell.\n\tShell bound: [{}, {})",
                 part.distance,
                 shell_it->m_lower_inc,
-                shell_it->m_upper));
+                shell_it->m_upper);
 
             // std::exit(-1);
         }

@@ -4,7 +4,6 @@
 #include "system.hpp"
 
 #include <cmath>
-#include <cstdlib>
 #include <format>
 #include <mgl2/mgl.h>
 #include <mgl2/qt.h>
@@ -34,14 +33,11 @@ auto plot_part(mglGraph *gr) {
     g_system.update_half_mass(hist.m_shells);
     g_system.update_scale_length();
 
-    // auto hernquist_dens_profile = density_hernquist()
-
-    Logging::info(std::format("Total mass of system: {}", g_system.m_total_mass));
-    Logging::info(std::format("Half mass of system: {}", g_system.m_half_mass));
-    Logging::info(std::format("Scaling length of system: {}", g_system.m_scale_length));
-
     // set plot parameters
     gr->SetSize(1920, 1080);
+    Logging::info("Total mass of system: {}", g_system.m_total_mass);
+    Logging::info("Half mass of system: {}", g_system.m_half_mass);
+    Logging::info("Scaling length of system: {}", g_system.m_scale_length);
 
     // set sphere 3d plot params
     // TODO: (aver) fix plot rotation in subsequent plots
@@ -77,9 +73,10 @@ auto plot_part(mglGraph *gr) {
     gr->WriteFrame("plot.png");
     Logging::info("Spheres plotted.");
 
-    // reset frames and set options for histogram plot
-    gr->ClearFrame();
-    gr->ResetFrames();
+    mglData x2 = index;
+    mglData y2 = hernquist_dens;
+    mglData y3 = numeric_dens;
+    Logging::info("{}", x2.Maximal());
 
     // convert values to mgl types
     x = v_bin_idx;

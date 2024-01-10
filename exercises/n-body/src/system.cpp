@@ -15,7 +15,7 @@
 System::System(const std::string_view &path_name) {
     auto particles_opt = Data::read_data(path_name);
     if (not particles_opt.has_value()) {
-        Logging::err(std::format("Error while reading file: {}", path_name));
+        Logging::err("Error while reading file: {}", path_name);
         std::exit(-1);
     };
     m_particles = particles_opt.value();
@@ -81,7 +81,7 @@ auto System::calc_total_mass() const -> double {
     // #pragma omp atomic
     //         total_mass += part.mass;
     //     }
-    Logging::info(std::format("Total mass of system: {}", m_total_mass));
+    Logging::info("Total mass of system: {}", m_total_mass);
 
     return total_mass;
 }
