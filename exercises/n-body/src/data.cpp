@@ -51,7 +51,7 @@ auto Data::read_data(const std::filesystem::path &path_name)
             } else if (i == 9) {
                 part.potential = std::stod(word);
             }
-            part.calc_orign_distance();
+            part.update_origin_dist();
             particles.push_back(part);
             i++;
             // part.print_summary();

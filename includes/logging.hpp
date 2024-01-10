@@ -5,7 +5,9 @@
 #include <string_view>
 
 /**
- * TODO: (aver) add timing to loggin
+ * TODO: (aver) 
+ * - add timing to loggin
+ * - add std::format support (turned out to be more difficult than I though)
  */
 
 namespace Logging {
@@ -19,18 +21,18 @@ static constexpr std::string_view RESET = "\033[0m";
 
 } // namespace Colors
 
-template <class T> inline auto dbg(const T &dbg_msg) { std::cerr << "DEBUG: " << dbg_msg << "\n"; }
+template <class T> auto dbg(const T &dbg_msg) { std::cout << "[ DEBUG ]: " << dbg_msg << "\n"; }
 
-template <class T> inline auto info(const T &info_msg) {
-    std::cerr << Colors::BRIGHT_BLUE << "INFO: " << Colors::RESET << info_msg << "\n";
+template <class T> auto info(const T &info_msg) {
+    std::cout << Colors::BRIGHT_BLUE << "[ INFO ]: " << Colors::RESET << info_msg << "\n";
 }
 
-template <class T> inline auto warn(const T &warn_msg) {
-    std::cerr << Colors::YELLOW << "WARN: " << Colors::RESET << warn_msg << "\n";
+template <class T> auto warn(const T &warn_msg) {
+    std::cerr << Colors::YELLOW << "[ WARN ]: " << Colors::RESET << warn_msg << "\n";
 }
 
-template <class T> inline auto err(const T &error_msg) {
-    std::cerr << Colors::RED << "ERROR: " << Colors::RESET << error_msg << "\n";
+template <class T> auto err(const T &error_msg) {
+    std::cerr << Colors::RED << "[ ERROR ]: " << Colors::RESET << error_msg << "\n";
 }
 
 } // namespace Logging

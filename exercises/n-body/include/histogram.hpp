@@ -2,12 +2,14 @@
 #define HISTOGRAM_H_
 
 #include "shell.hpp"
+#include "system.hpp"
 #include "types.hpp"
-#include <vector>
 
 class Histogram {
   public:
-    explicit Histogram(const int no_bins, const PartVec &particles);
+    ShellVec m_shells;
+
+    explicit Histogram(const uint no_bins, const double radius, System &p_system);
     Histogram(Histogram &&) = default;
     Histogram(const Histogram &) = default;
     Histogram &operator=(Histogram &&) = default;
@@ -15,7 +17,6 @@ class Histogram {
     ~Histogram();
 
   private:
-    std::vector<Shell> m_shells;
 };
 
 #endif // ! HISTOGRAM_H_

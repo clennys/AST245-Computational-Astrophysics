@@ -1,9 +1,7 @@
-#ifndef TYPES_H_
-#define TYPES_H_
-#include "particle.hpp"
-#include <cstdint>
-#include <vector>
+#ifndef COMPASTRO_TYPES_H_
+#define COMPASTRO_TYPES_H_
 
-using PartVec = std::vector<Particle3D>;
+/// Type to simply hold unsigned integers
+using uint = unsigned int;
 
-#endif // ! TYPES_H_
+#endif // ! COMPASTRO_TYPES_H_
