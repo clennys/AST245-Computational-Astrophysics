@@ -6,9 +6,13 @@
 
 class System {
   public:
+    // Use fixed mass
+    // static constexpr double km_mass = 92.4259;
+    static constexpr double km_mass = 1.;
+
     PartVec m_particles;
     double m_total_mass = 0.;
-    double m_half_mass = 0.;
+    double m_half_mass_rad = 0.;
     double m_scale_length = 0.;
     double m_min_rad = 0.;
     double m_max_rad = 0.;
@@ -35,9 +39,9 @@ class System {
     auto update_total_mass() -> void;
 
     /// Calculate the half mass and return it
-    [[nodiscard]] auto calc_half_mass(const ShellVec &shells) const -> double;
+    [[nodiscard]] auto calc_half_mass_radius(const ShellVec &shells) const -> double;
     /// Calculate the half mass and set the half mass member value
-    auto update_half_mass(const ShellVec &shells) -> void;
+    auto update_half_mass_radius(const ShellVec &shells) -> void;
 
     /// Calculate the scale length and return it
     [[nodiscard]] auto calc_scale_length() const -> double;
@@ -53,7 +57,7 @@ class System {
     auto density_hernquist(double rad) -> double;
 
     /// Return the mass found within a radius, not using `Histogram` or `Shells`
-    auto get_constrained_mass(const double rad) -> double;
+    auto get_constrained_shell_mass(const double lower_rad, const double upper_rad) const -> double;
 
   private:
 };

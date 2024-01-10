@@ -6,7 +6,7 @@
 #include <cmath>
 #include <format>
 #include <mgl2/mgl.h>
-#include <mgl2/qt.h>
+// #include <mgl2/qt.h>
 
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
@@ -17,113 +17,95 @@ auto plot_part(mglGraph *gr) {
     // set plot parameters
     gr->SetSize(1920, 1080);
 
-    mglData x;
-    mglData y;
-    mglData z;
-
-    auto trans_vec = g_system.transform_vectors();
-
-    x = std::get<0>(trans_vec);
-    y = std::get<1>(trans_vec);
-    z = std::get<2>(trans_vec);
-
     auto furthest_particle = g_system.get_max_distance();
+    Histogram hist(100'000, furthest_particle.distance, g_system);
 
-    // auto x_bound = std::abs(furthest_particle.position.x());
-    // auto y_bound = std::abs(furthest_particle.position.y());
-    // auto z_bound = std::abs(furthest_particle.position.z());
-
-    Histogram hist(1'000'000, furthest_particle.distance, g_system);
-
-    g_system.update_half_mass(hist.m_shells);
+    // g_system.update_half_mass(hist.m_shells);
+    g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
 
     // set plot parameters
     gr->SetSize(1920, 1080);
     Logging::info("Total mass of system: {}", g_system.m_total_mass);
-    Logging::info("Half mass of system: {}", g_system.m_half_mass);
+    Logging::info("Half mass of system: {}", g_system.m_half_mass_rad);
     Logging::info("Scaling length of system: {}", g_system.m_scale_length);
 
     std::vector<double> index;
     std::vector<double> hernquist_dens;
     std::vector<double> numeric_dens;
-    constexpr auto no_steps = 50;
-    const auto k_uniform_mass = g_system.m_particles[1].mass;
-    g_system.m_min_rad = 0.005;
-
-    auto drLinToLog = [](const double i) {
-        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_steps);
-    };
-    auto plotFit = [](double x) { return x + std::numeric_limits<double>::epsilon(); };
-
-    // mglData y2(no_steps);
 
     // precalculated (by the compiler!) constant for shell volume
-    constexpr auto K_SHELL_VOL_PREF = 4. / 3. * std::numbers::pi;
-
-    for (int r = 0; r <= no_steps; r++) {
-        auto lower_rad = drLinToLog(r);
-        auto upper_rad = drLinToLog(r + 1);
-
-        // auto lower_rad = static_cast<double>(r);
-        // auto upper_rad = static_cast<double>(r + 1);
-
-        std::cerr << "DEBUGPRINT[7]: main.cpp:112: lower_rad=" << lower_rad << std::endl;
-        std::cerr << "DEBUGPRINT[6]: main.cpp:113: upper_rad=" << upper_rad << std::endl;
-
-        // y2.a[r] = plotFit(g_system.density_hernquist((lower_rad / (upper_rad + 1)) * .5));
-
-        const auto k_shell_mass =
-            g_system.get_constrained_mass(upper_rad) - g_system.get_constrained_mass(lower_rad);
-        // std::cerr << "DEBUGPRINT[5]: main.cpp:121: k_shell_mass=" << k_shell_mass << std::endl;
+    constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
+#if 0
+    auto i = 0;
+    for (const auto &shell : hist.m_shells) {
 
         const auto k_shell_volume =
-            K_SHELL_VOL_PREF * (std::pow(upper_rad, 3) - std::pow(lower_rad, 3));
-        // std::cerr << "DEBUGPRINT[4]: main.cpp:124: k_shell_volume=" << k_shell_volume <<
-        // std::endl;
+            k_shell_vol_pref * (std::pow(shell.m_upper, 3) - std::pow(shell.m_lower_inc, 3));
 
-        const auto k_shell_rho = k_shell_mass / k_shell_volume;
-        // std::cerr << "DEBUGPRINT[3]: main.cpp:127: k_shell_rho=" << k_shell_rho << std::endl;
+        const auto k_shell_rho = shell.m_mass / k_shell_volume;
 
-        const auto k_no_parts_in_shell = k_shell_mass / k_uniform_mass;
-        // std::cerr << "DEBUGPRINT[2]: main.cpp:129: k_no_parts_in_shell=" << k_no_parts_in_shell
-        //           << std::endl;
+        auto val = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) * .5);
 
-        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * k_uniform_mass / k_shell_volume;
-        // std::cerr << "DEBUGPRINT[1]: main.cpp:131: k_rho_error=" << k_rho_error << std::endl;
+        Logging::info("\n\tH: {}\n\tN: {}", val, k_shell_rho);
 
-        // y2.a[r] = g_system.density_hernquist((lower_rad + upper_rad) / 2);
-        // Logging::dbg(y2.a[r]);
-
-        auto val = plotFit(g_system.density_hernquist((lower_rad + upper_rad) * .5));
-        std::cerr << "DEBUGPRINT[2]: main.cpp:139: val=" << val << std::endl;
-
-        index.emplace_back(r);
-        hernquist_dens.emplace_back(plotFit(val));
-        numeric_dens.emplace_back(plotFit(k_shell_rho));
-
-        Logging::info("\n");
+        index.emplace_back(i);
+        hernquist_dens.emplace_back(val);
+        numeric_dens.emplace_back(k_shell_rho);
+        i++;
     }
+#else
+    constexpr auto no_steps = 50;
+    g_system.m_min_rad = 0.005;
 
-    mglData x2 = index;
-    mglData y2 = hernquist_dens;
-    mglData y3 = numeric_dens;
-    Logging::info("{}", x2.Maximal());
+    // TODO: (aver) make these static/member methods of gsystem
+    constexpr auto dr_lin_to_log = [&](const double i) {
+        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_steps);
+    };
+    constexpr auto fit_for_plot = [](const double x) {
+        return x + std::numeric_limits<double>::epsilon();
+    };
 
-    // gr->SetRanges(y2.Minimal(), y2.Maximal());
-    // gr->SetRange('y', y2.Minimal(), y2.Minimal());
-    // gr->SetRange('x', x2);
+    for (int r = 0; r <= no_steps; r++) {
+        auto lower_rad = dr_lin_to_log(r);
+        auto upper_rad = dr_lin_to_log(r + 1);
+        const auto k_shell_mass = g_system.get_constrained_shell_mass(lower_rad, upper_rad);
+        const auto k_shell_volume =
+            k_shell_vol_pref * (std::pow(upper_rad, 3) - std::pow(lower_rad, 3));
+        const auto k_no_parts_in_shell = k_shell_mass / g_system.km_mass;
+        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * g_system.km_mass / k_shell_volume;
 
-    auto outMin = std::min(y2.Minimal(), y3.Minimal());
-    auto outMax = std::max(y2.Maximal(), y3.Maximal());
-    gr->SetRange('x', x2);
-    gr->SetRange('y', outMin, outMax);
+        const auto k_shell_rho = fit_for_plot(k_shell_mass / k_shell_volume);
+        const auto k_hern_rho =
+            fit_for_plot(g_system.density_hernquist((lower_rad + upper_rad) / 2));
+
+        Logging::info("\n\tH: {}\n\tN: {}", k_hern_rho, k_shell_rho);
+        index.emplace_back(r);
+        hernquist_dens.emplace_back(k_hern_rho);
+        numeric_dens.emplace_back(k_shell_rho);
+    }
+#endif
+
+    mglData x = index;
+    mglData y_hern = hernquist_dens;
+    mglData y_num = numeric_dens;
+
+    auto y_min = std::min(y_hern.Minimal(), y_num.Minimal());
+    auto y_max = std::max(y_hern.Maximal(), y_num.Maximal());
+
+    gr->SetRange('x', x);
+    gr->SetRange('y', y_min, y_max);
 
     gr->Axis();
-    gr->Plot(x2, y2, "b");
+
+    gr->Plot(x, y_hern, "b");
     gr->AddLegend("Hernquist Density Profile", "b");
-    gr->Plot(x2, y3, "r. ");
+
+    gr->Plot(x, y_num, "r");
     gr->AddLegend("Numeric Density Profile", "r");
+
+    gr->Legend();
+    gr->WriteFrame("hernquist.jpg");
     gr->WriteFrame("hernquist.png");
     Logging::info("Hernquist plotted.");
 
@@ -138,7 +120,7 @@ auto main(int argc, char *argv[]) -> int {
 
     g_system = System(argv[1]);
 
-#if 0
+#if 1
     mglGraph gr;
     plot_part(&gr);
 #else
