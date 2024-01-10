@@ -59,14 +59,12 @@ auto System::transform_vectors()
 }
 // TODO: (aver) add min function
 auto System::get_max_distance() -> Particle3D {
-    auto result =
+    auto result_it =
         std::max_element(m_particles.begin(), m_particles.end(), [](Particle3D a, Particle3D b) {
             return a.distance < b.distance;
         });
-
-    result->print_summary();
-
-    return *result;
+    // result_it->print_summary();
+    return *result_it;
 }
 auto System::calc_total_mass() const -> double {
 
@@ -74,13 +72,6 @@ auto System::calc_total_mass() const -> double {
         m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
             return sum + part.mass;
         });
-
-    //     auto total_mass = 0.;
-    // #pragma omp parallel for
-    //     for (const auto &part : m_particles) {
-    // #pragma omp atomic
-    //         total_mass += part.mass;
-    //     }
     Logging::info("Total mass of system: {}", m_total_mass);
 
     return total_mass;
@@ -104,7 +95,7 @@ auto System::update_half_mass(const ShellVec &shells) -> void {
     m_half_mass = calc_half_mass(shells);
 }
 
-auto System::calc_scale_length() const -> double { return m_half_mass / (1 / std::sqrt(2)); }
+auto System::calc_scale_length() const -> double { return m_half_mass / (1 + std::sqrt(2)); }
 auto System::update_scale_length() -> void { m_scale_length = calc_scale_length(); }
 
 auto System::update_min_rad(const double rad) -> void { m_min_rad = std::min(m_min_rad, rad); }
