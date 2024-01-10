@@ -6,7 +6,7 @@
 #include <cmath>
 #include <format>
 #include <mgl2/mgl.h>
-// #include <mgl2/qt.h>
+#include <mgl2/qt.h>
 
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
@@ -33,12 +33,17 @@ auto plot_part(mglGraph *gr) {
     std::vector<double> index;
     std::vector<double> hernquist_dens;
     std::vector<double> numeric_dens;
+    std::vector<double> rho_error;
 
     // precalculated (by the compiler!) constant for shell volume
     constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
+
 #if 0
+    // auto local_system(g_system);
+    // Histogram hist2(50, furthest_particle.distance, local_system);
+
     auto i = 0;
-    for (const auto &shell : hist.m_shells) {
+    for (const auto &shell : hist2.m_shells) {
 
         const auto k_shell_volume =
             k_shell_vol_pref * (std::pow(shell.m_upper, 3) - std::pow(shell.m_lower_inc, 3));
@@ -55,40 +60,56 @@ auto plot_part(mglGraph *gr) {
         i++;
     }
 #else
-    constexpr auto no_steps = 50;
+    constexpr auto no_bins = 50;
+    constexpr auto avg_parts = 50009. / no_bins;
+    constexpr auto std_dev = std::sqrt(avg_parts);
+
     g_system.m_min_rad = 0.005;
 
     // TODO: (aver) make these static/member methods of gsystem
     constexpr auto dr_lin_to_log = [&](const double i) {
-        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_steps);
+        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_bins);
     };
     constexpr auto fit_for_plot = [](const double x) {
         return x + std::numeric_limits<double>::epsilon();
     };
 
-    for (int r = 0; r <= no_steps; r++) {
+    for (int r = 0; r <= no_bins; r++) {
         auto lower_rad = dr_lin_to_log(r);
         auto upper_rad = dr_lin_to_log(r + 1);
+        Logging::info("bin: {}, lower: {}, upper {}", r, lower_rad, upper_rad);
+
         const auto k_shell_mass = g_system.get_constrained_shell_mass(lower_rad, upper_rad);
         const auto k_shell_volume =
             k_shell_vol_pref * (std::pow(upper_rad, 3) - std::pow(lower_rad, 3));
+
         const auto k_no_parts_in_shell = k_shell_mass / g_system.km_mass;
-        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * g_system.km_mass / k_shell_volume;
 
         const auto k_shell_rho = fit_for_plot(k_shell_mass / k_shell_volume);
         const auto k_hern_rho =
             fit_for_plot(g_system.density_hernquist((lower_rad + upper_rad) / 2));
 
-        Logging::info("\n\tH: {}\n\tN: {}", k_hern_rho, k_shell_rho);
+        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * g_system.km_mass / k_shell_volume;
+        // const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / g_system.km_mass;
+        // const auto k_rho_error = std::sqrt(no_parts_in_hern) * g_system.km_mass / k_shell_volume;
+        // const auto k_rho_error = std::sqrt(avg_parts) * g_system.km_mass / k_shell_volume;
+
+        // Logging::info("Parts hern: {}, num: {}", no_parts_in_hern, k_no_parts_in_shell);
+        // Logging::info("Lambda: {}", std::abs(no_parts_in_hern - k_no_parts_in_shell), 2);
+
+        // Logging::info("\n\tHer: {}\n\tNum: {}\n\tErr: {}", k_hern_rho, k_shell_rho, k_rho_error);
+
         index.emplace_back(r);
         hernquist_dens.emplace_back(k_hern_rho);
         numeric_dens.emplace_back(k_shell_rho);
+        rho_error.emplace_back(k_rho_error);
     }
 #endif
 
     mglData x = index;
     mglData y_hern = hernquist_dens;
     mglData y_num = numeric_dens;
+    mglData y_err = rho_error;
 
     auto y_min = std::min(y_hern.Minimal(), y_num.Minimal());
     auto y_max = std::max(y_hern.Maximal(), y_num.Maximal());
@@ -98,11 +119,17 @@ auto plot_part(mglGraph *gr) {
 
     gr->Axis();
 
+    gr->Label('x', "Radius [l]", 0);
+    gr->Label('y', "Density [m]/[l]^3", 0);
+
     gr->Plot(x, y_hern, "b");
     gr->AddLegend("Hernquist Density Profile", "b");
 
-    gr->Plot(x, y_num, "r");
-    gr->AddLegend("Numeric Density Profile", "r");
+    gr->Plot(x, y_num, "r .");
+    gr->AddLegend("Numeric Density Profile", "r .");
+
+    gr->Error(x, y_num, y_err, "q");
+    gr->AddLegend("Poissonian Error", "q");
 
     gr->Legend();
     gr->WriteFrame("hernquist.jpg");
@@ -123,6 +150,7 @@ auto main(int argc, char *argv[]) -> int {
 #if 1
     mglGraph gr;
     plot_part(&gr);
+
 #else
     mglQT gr(plot_part, "MathGL examples");
     auto gr_res = gr.Run();
