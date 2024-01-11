@@ -4,6 +4,8 @@
 #include "particle.hpp"
 #include "shell.hpp"
 
+#include <limits>
+
 class System {
   public:
     // Use fixed mass
@@ -14,8 +16,9 @@ class System {
     double m_total_mass = 0.;
     double m_half_mass_rad = 0.;
     double m_scale_length = 0.;
-    double m_min_rad = 0.;
+    double m_min_rad = std::numeric_limits<double>::max();
     double m_max_rad = 0.;
+    double m_softening = 0.;
 
     explicit System(const std::string_view &path_name);
 

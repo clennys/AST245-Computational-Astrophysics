@@ -71,5 +71,5 @@ target_link_libraries(${PROJECT_NAME}
     omp
     tbb
     mgl
-    mgl-qt5
+    # mgl-qt5
 )

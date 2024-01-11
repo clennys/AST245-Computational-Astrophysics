@@ -6,16 +6,16 @@
 #include <cmath>
 #include <format>
 #include <mgl2/mgl.h>
-#include <mgl2/qt.h>
+#include <string_view>
 
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
 ///
 static System g_system;
 
-auto plot_part(mglGraph *gr) {
-    // set plot parameters
-    gr->SetSize(1920, 1080);
+// TODO: (aver) consider making this a factory like static function on the `System` class
+auto init_system(const std::string_view &path) {
+    g_system = System(path);
 
     auto furthest_particle = g_system.get_max_distance();
     Histogram hist(100'000, furthest_particle.distance, g_system);
@@ -23,12 +23,18 @@ auto plot_part(mglGraph *gr) {
     // g_system.update_half_mass(hist.m_shells);
     g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
+    g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
 
+    Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
+    Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
+    Logging::info("Scaling length of system:   {:>12.10f}", g_system.m_scale_length);
+    Logging::info("Softening of system:        {:>12.10f}", g_system.m_softening);
+}
+
+auto plot_rho_step_1() {
+    mglGraph gr;
     // set plot parameters
-    gr->SetSize(1920, 1080);
-    Logging::info("Total mass of system: {}", g_system.m_total_mass);
-    Logging::info("Half mass of system: {}", g_system.m_half_mass_rad);
-    Logging::info("Scaling length of system: {}", g_system.m_scale_length);
+    gr.SetSize(1920, 1080);
 
     std::vector<double> index;
     std::vector<double> hernquist_dens;
@@ -114,51 +120,45 @@ auto plot_part(mglGraph *gr) {
     auto y_min = std::min(y_hern.Minimal(), y_num.Minimal());
     auto y_max = std::max(y_hern.Maximal(), y_num.Maximal());
 
-    gr->SetRange('x', x);
-    gr->SetRange('y', y_min, y_max);
+    gr.SetRange('x', x);
+    gr.SetRange('y', y_min, y_max);
 
-    gr->Axis();
+    gr.Axis();
 
-    gr->Label('x', "Radius [l]", 0);
-    gr->Label('y', "Density [m]/[l]^3", 0);
+    gr.Label('x', "Radius [l]", 0);
+    gr.Label('y', "Density [m]/[l]^3", 0);
 
-    gr->Plot(x, y_hern, "b");
-    gr->AddLegend("Hernquist Density Profile", "b");
+    gr.Plot(x, y_hern, "b");
+    gr.AddLegend("Hernquist Density Profile", "b");
 
-    gr->Plot(x, y_num, "r .");
-    gr->AddLegend("Numeric Density Profile", "r .");
+    gr.Plot(x, y_num, "r .");
+    gr.AddLegend("Numeric Density Profile", "r .");
 
-    gr->Error(x, y_num, y_err, "q");
-    gr->AddLegend("Poissonian Error", "q");
+    gr.Error(x, y_num, y_err, "q");
+    gr.AddLegend("Poissonian Error", "q");
 
-    gr->Legend();
-    gr->WriteFrame("hernquist.jpg");
-    gr->WriteFrame("hernquist.png");
+    gr.Legend();
+    gr.WriteFrame("hernquist.jpg");
+    gr.WriteFrame("hernquist.png");
     Logging::info("Hernquist plotted.");
-
-    return 0;
 }
 
-auto main(int argc, char *argv[]) -> int {
+auto plot_forces_step_2() {
+    mglGraph gr;
+    // set plot parameters
+    gr.SetSize(1920, 1080);
+}
+
+auto main(const int argc, const char *const argv[]) -> int {
     if (argc != 2) {
-        Logging::err("File argument missing");
+        Logging::err("Please supply a single file argument!");
         return -1;
     }
+    // initialize the g_system variable
+    init_system(argv[1]);
 
-    g_system = System(argv[1]);
-
-#if 1
-    mglGraph gr;
-    plot_part(&gr);
-
-#else
-    mglQT gr(plot_part, "MathGL examples");
-    auto gr_res = gr.Run();
-    if (gr_res != 0) {
-        Logging::err("MathGL failed");
-        return gr_res;
-    }
-#endif
+    // plot_rho_step_1();
+    plot_forces_step_2();
 
     Logging::info("Successfully quit!");
     return 0;
