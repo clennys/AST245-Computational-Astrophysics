@@ -144,9 +144,44 @@ auto plot_rho_step_1() {
 }
 
 auto plot_forces_step_2() {
+
+    constexpr auto no_bins = 100;
+    constexpr auto dr_lin_to_log = [&](const double i) {
+        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_bins);
+    };
+    constexpr auto fit_for_plot = [](const double x) {
+        return x + std::numeric_limits<double>::epsilon();
+    };
+
+    g_system.m_min_rad = 0.005;
+
+    std::vector<double> analytic_force;
+    std::vector<double> idx;
+
+    for (int i = 0; i < no_bins; i++) {
+        auto val = g_system.newton_force(dr_lin_to_log(i));
+        Logging::info("{}", val);
+        analytic_force.emplace_back(fit_for_plot(val));
+        idx.emplace_back(i);
+    }
+
+    mglData indices = idx;
+    mglData aforce = analytic_force;
+
     mglGraph gr;
     // set plot parameters
     gr.SetSize(1920, 1080);
+
+    gr.SetRange('x', indices);
+    gr.SetRange('y', aforce);
+
+    gr.Axis();
+
+    gr.Plot(indices, aforce, "b");
+    gr.AddLegend("Analytic", "b");
+
+    gr.Legend();
+    gr.WritePNG("forces.png");
 }
 
 auto main(const int argc, const char *const argv[]) -> int {
@@ -157,8 +192,11 @@ auto main(const int argc, const char *const argv[]) -> int {
     // initialize the g_system variable
     init_system(argv[1]);
 
+    // task 1
     // plot_rho_step_1();
     plot_forces_step_2();
+
+    // task 2
 
     Logging::info("Successfully quit!");
     return 0;

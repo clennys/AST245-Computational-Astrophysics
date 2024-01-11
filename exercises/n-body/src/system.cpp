@@ -114,7 +114,10 @@ auto System::get_constrained_shell_mass(const double lower_rad, const double upp
         });
 }
 
-auto System::density_hernquist(const double rad) -> double {
+auto System::density_hernquist(const double rad) const -> double {
     return (m_total_mass * m_scale_length) /
            (2 * std::numbers::pi * rad * std::pow(rad + m_scale_length, 3));
+}
+auto System::newton_force(const double rad) const -> double {
+    return -m_total_mass * km_mass / (std::pow(rad + m_scale_length, 2));
 }

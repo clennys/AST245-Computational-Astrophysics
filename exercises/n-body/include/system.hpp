@@ -57,7 +57,8 @@ class System {
     auto update_max_rad(const double rad) -> void;
 
     /// return the analytical density profile within a radius for Hernquist
-    auto density_hernquist(double rad) -> double;
+    auto density_hernquist(const double rad) const -> double;
+    auto newton_force(const double rad) const -> double;
 
     /// Return the mass found within a radius, not using `Histogram` or `Shells`
     auto get_constrained_shell_mass(const double lower_rad, const double upper_rad) const -> double;
