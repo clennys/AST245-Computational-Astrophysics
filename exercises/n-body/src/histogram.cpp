@@ -68,10 +68,12 @@ Histogram::Histogram(const uint no_bins, const double radius, System &p_system) 
     for (const auto &part : p_system.m_particles) {
 
         // use this loop to get total mass
-        p_system.m_total_mass += part.mass;
+        // p_system.m_total_mass += part.mass;
+        p_system.m_total_mass += p_system.km_mass;
+
         p_system.update_min_rad(part.distance);
         // this is calculated before calling the histogram constructor
-        // p_system.update_max_rad(part.distance);
+        p_system.update_max_rad(part.distance);
 
         auto shell_it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
             // Logging::dbg(std::format("Working on shell lower: {}", shell.m_lower_inc));
@@ -83,14 +85,15 @@ Histogram::Histogram(const uint no_bins, const double radius, System &p_system) 
         if (shell_it != m_shells.end()) {
             // Logging::dbg(std::format("Working on shell: {}", it->m_index));
             shell_it->m_particles.emplace_back(part);
-            shell_it->m_mass += part.mass;
+            // shell_it->m_mass += part.mass;
+            shell_it->m_mass += p_system.km_mass;
         } else {
             // handle the case, where a particle is not placed into any of the shells...
-            Logging::err(std::format(
+            Logging::err(
                 "Particle with distance: {}, was not placed into a shell.\n\tShell bound: [{}, {})",
                 part.distance,
                 shell_it->m_lower_inc,
-                shell_it->m_upper));
+                shell_it->m_upper);
 
             // std::exit(-1);
         }

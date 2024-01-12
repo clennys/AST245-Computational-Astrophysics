@@ -42,6 +42,8 @@
 		mathgl
         cmake
         cmakeCurses
+		llvmPackages.openmp
+		tbb
 		clang-tools_16
 		clang 
 		bear

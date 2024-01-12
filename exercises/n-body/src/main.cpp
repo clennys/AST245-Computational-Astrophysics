@@ -4,114 +4,199 @@
 #include "system.hpp"
 
 #include <cmath>
-#include <cstdlib>
 #include <format>
 #include <mgl2/mgl.h>
-#include <mgl2/qt.h>
+#include <string_view>
 
 /// Particles read in and used in the tasks.
 /// Global because the MathGL functions are not allowed to take parameters
 ///
 static System g_system;
 
-auto plot_part(mglGraph *gr) {
-    auto trans_vec = g_system.transform_vectors();
-
-    mglData x = std::get<0>(trans_vec);
-    mglData y = std::get<1>(trans_vec);
-    mglData z = std::get<2>(trans_vec);
+// TODO: (aver) consider making this a factory like static function on the `System` class
+auto init_system(const std::string_view &path) {
+    g_system = System(path);
 
     auto furthest_particle = g_system.get_max_distance();
+    Histogram hist(100'000, furthest_particle.distance, g_system);
 
-    auto x_bound = std::abs(furthest_particle.position.x());
-    auto y_bound = std::abs(furthest_particle.position.y());
-    auto z_bound = std::abs(furthest_particle.position.z());
-
-    Histogram hist(1000, furthest_particle.distance, g_system);
-
-    // auto half_mass_rad = g_system.calc_half_mass(hist.m_shells);
-    // auto scale_length_a = half_mass_rad / (1 + (std::sqrt(2)));
-    g_system.update_half_mass(hist.m_shells);
+    // g_system.update_half_mass(hist.m_shells);
+    g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
+    g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
 
-    // auto hernquist_dens_profile = density_hernquist()
-
-    Logging::info(std::format("Total mass of system: {}", g_system.m_total_mass));
-    Logging::info(std::format("Half mass of system: {}", g_system.m_half_mass));
-    Logging::info(std::format("Scaling length of system: {}", g_system.m_scale_length));
-
-    // set plot parameters
-    gr->SetSize(1920, 1080);
-
-    // set sphere 3d plot params
-    // TODO: (aver) fix plot rotation in subsequent plots
-    // or just use 2 subplots
-    // gr->Rotate(50, 60);
-    gr->SetRanges(-x_bound, x_bound, -y_bound, y_bound, -z_bound, z_bound);
-    gr->Box();
-    gr->Axis("xyz");
-    gr->Alpha(true);
-
-    Logging::info("Plotting Spheres and preparing histogram...");
-
-    // Draw the sphere at the origin with the specified radius
-    std::vector<double> v_bin_value, v_bin_idx;
-    { // reduced scope, so that origin is invalidated afterwards
-        const mglPoint origin(0, 0, 0);
-
-        for (auto &shell : hist.m_shells) {
-            // plot bin sphere
-            // TODO: (aver) adjust color and transpency, otherwise not much sense
-            gr->Sphere(origin, shell.m_upper, "b");
-
-            // Logging::dbg(std::format("val: {}, idx: {}", shell.m_particles.size(),
-            // shell.m_index));
-
-            // populate values for plot
-            v_bin_value.emplace_back(static_cast<int>(shell.m_particles.size()));
-            v_bin_idx.emplace_back(static_cast<int>(shell.m_upper));
-        }
-    }
-    gr->Alpha(false);
-    gr->Dots(x, y, z, "r");
-    gr->WriteFrame("plot.png");
-    Logging::info("Spheres plotted.");
-
-    // reset frames and set options for histogram plot
-    gr->ClearFrame();
-    gr->ResetFrames();
-
-    // convert values to mgl types
-    x = v_bin_idx;
-    y = v_bin_value;
-
-    gr->SetRanges(x.Minimal(), x.Maximal(), y.Minimal(), y.Maximal());
-    gr->Axis("xy");
-    gr->Bars(x, y);
-    gr->WriteFrame("histogram.png");
-    Logging::info("Histogram plotted.");
-    return 0;
+    Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
+    Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
+    Logging::info("Scaling length of system:   {:>12.10f}", g_system.m_scale_length);
+    Logging::info("Softening of system:        {:>12.10f}", g_system.m_softening);
 }
 
-auto main(int argc, char *argv[]) -> int {
-    if (argc != 2) {
-        Logging::err("File argument missing");
-        return -1;
-    }
-
-    g_system = System(argv[1]);
-
-#if 1
+auto plot_rho_step_1() {
     mglGraph gr;
-    plot_part(&gr);
+    // set plot parameters
+    gr.SetSize(1920, 1080);
+
+    std::vector<double> index;
+    std::vector<double> hernquist_dens;
+    std::vector<double> numeric_dens;
+    std::vector<double> rho_error;
+
+    // precalculated (by the compiler!) constant for shell volume
+    constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
+
+#if 0
+    // auto local_system(g_system);
+    // Histogram hist2(50, furthest_particle.distance, local_system);
+
+    auto i = 0;
+    for (const auto &shell : hist2.m_shells) {
+
+        const auto k_shell_volume =
+            k_shell_vol_pref * (std::pow(shell.m_upper, 3) - std::pow(shell.m_lower_inc, 3));
+
+        const auto k_shell_rho = shell.m_mass / k_shell_volume;
+
+        auto val = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) * .5);
+
+        Logging::info("\n\tH: {}\n\tN: {}", val, k_shell_rho);
+
+        index.emplace_back(i);
+        hernquist_dens.emplace_back(val);
+        numeric_dens.emplace_back(k_shell_rho);
+        i++;
+    }
 #else
-    mglQT gr(plot_part, "MathGL examples");
-    auto gr_res = gr.Run();
-    if (gr_res != 0) {
-        Logging::err("MathGL failed");
-        return gr_res;
+    constexpr auto no_bins = 50;
+    constexpr auto avg_parts = 50009. / no_bins;
+    constexpr auto std_dev = std::sqrt(avg_parts);
+
+    g_system.m_min_rad = 0.005;
+
+    // TODO: (aver) make these static/member methods of gsystem
+    constexpr auto dr_lin_to_log = [&](const double i) {
+        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_bins);
+    };
+    constexpr auto fit_for_plot = [](const double x) {
+        return x + std::numeric_limits<double>::epsilon();
+    };
+
+    for (int r = 0; r <= no_bins; r++) {
+        auto lower_rad = dr_lin_to_log(r);
+        auto upper_rad = dr_lin_to_log(r + 1);
+        Logging::info("bin: {}, lower: {}, upper {}", r, lower_rad, upper_rad);
+
+        const auto k_shell_mass = g_system.get_constrained_shell_mass(lower_rad, upper_rad);
+        const auto k_shell_volume =
+            k_shell_vol_pref * (std::pow(upper_rad, 3) - std::pow(lower_rad, 3));
+
+        const auto k_no_parts_in_shell = k_shell_mass / g_system.km_mass;
+
+        const auto k_shell_rho = fit_for_plot(k_shell_mass / k_shell_volume);
+        const auto k_hern_rho =
+            fit_for_plot(g_system.density_hernquist((lower_rad + upper_rad) / 2));
+
+        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * g_system.km_mass / k_shell_volume;
+        // const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / g_system.km_mass;
+        // const auto k_rho_error = std::sqrt(no_parts_in_hern) * g_system.km_mass / k_shell_volume;
+        // const auto k_rho_error = std::sqrt(avg_parts) * g_system.km_mass / k_shell_volume;
+
+        // Logging::info("Parts hern: {}, num: {}", no_parts_in_hern, k_no_parts_in_shell);
+        // Logging::info("Lambda: {}", std::abs(no_parts_in_hern - k_no_parts_in_shell), 2);
+
+        // Logging::info("\n\tHer: {}\n\tNum: {}\n\tErr: {}", k_hern_rho, k_shell_rho, k_rho_error);
+
+        index.emplace_back(r);
+        hernquist_dens.emplace_back(k_hern_rho);
+        numeric_dens.emplace_back(k_shell_rho);
+        rho_error.emplace_back(k_rho_error);
     }
 #endif
+
+    mglData x = index;
+    mglData y_hern = hernquist_dens;
+    mglData y_num = numeric_dens;
+    mglData y_err = rho_error;
+
+    auto y_min = std::min(y_hern.Minimal(), y_num.Minimal());
+    auto y_max = std::max(y_hern.Maximal(), y_num.Maximal());
+
+    gr.SetRange('x', x);
+    gr.SetRange('y', y_min, y_max);
+
+    gr.Axis();
+
+    gr.Label('x', "Radius [l]", 0);
+    gr.Label('y', "Density [m]/[l]^3", 0);
+
+    gr.Plot(x, y_hern, "b");
+    gr.AddLegend("Hernquist Density Profile", "b");
+
+    gr.Plot(x, y_num, "r .");
+    gr.AddLegend("Numeric Density Profile", "r .");
+
+    gr.Error(x, y_num, y_err, "q");
+    gr.AddLegend("Poissonian Error", "q");
+
+    gr.Legend();
+    gr.WriteFrame("hernquist.jpg");
+    gr.WriteFrame("hernquist.png");
+    Logging::info("Hernquist plotted.");
+}
+
+auto plot_forces_step_2() {
+
+    constexpr auto no_bins = 100;
+    constexpr auto dr_lin_to_log = [&](const double i) {
+        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_bins);
+    };
+    constexpr auto fit_for_plot = [](const double x) {
+        return x + std::numeric_limits<double>::epsilon();
+    };
+
+    g_system.m_min_rad = 0.005;
+
+    std::vector<double> analytic_force;
+    std::vector<double> idx;
+
+    for (int i = 0; i < no_bins; i++) {
+        auto val = g_system.newton_force(dr_lin_to_log(i));
+        Logging::info("{}", val);
+        analytic_force.emplace_back(fit_for_plot(val));
+        idx.emplace_back(i);
+    }
+
+    mglData indices = idx;
+    mglData aforce = analytic_force;
+
+    mglGraph gr;
+    // set plot parameters
+    gr.SetSize(1920, 1080);
+
+    gr.SetRange('x', indices);
+    gr.SetRange('y', aforce);
+
+    gr.Axis();
+
+    gr.Plot(indices, aforce, "b");
+    gr.AddLegend("Analytic", "b");
+
+    gr.Legend();
+    gr.WritePNG("forces.png");
+}
+
+auto main(const int argc, const char *const argv[]) -> int {
+    if (argc != 2) {
+        Logging::err("Please supply a single file argument!");
+        return -1;
+    }
+    // initialize the g_system variable
+    init_system(argv[1]);
+
+    // task 1
+    // plot_rho_step_1();
+    plot_forces_step_2();
+
+    // task 2
 
     Logging::info("Successfully quit!");
     return 0;

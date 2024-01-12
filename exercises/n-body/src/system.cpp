@@ -15,7 +15,7 @@
 System::System(const std::string_view &path_name) {
     auto particles_opt = Data::read_data(path_name);
     if (not particles_opt.has_value()) {
-        Logging::err(std::format("Error while reading file: {}", path_name));
+        Logging::err("Error while reading file: {}", path_name);
         std::exit(-1);
     };
     m_particles = particles_opt.value();
@@ -59,40 +59,32 @@ auto System::transform_vectors()
 }
 // TODO: (aver) add min function
 auto System::get_max_distance() -> Particle3D {
-    auto result =
+    auto result_it =
         std::max_element(m_particles.begin(), m_particles.end(), [](Particle3D a, Particle3D b) {
             return a.distance < b.distance;
         });
-
-    result->print_summary();
-
-    return *result;
+    // result_it->print_summary();
+    return *result_it;
 }
 auto System::calc_total_mass() const -> double {
 
     auto total_mass = std::accumulate(
         m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
-            return sum + part.mass;
+            // return sum + part.mass;
+            return sum + km_mass;
         });
-
-    //     auto total_mass = 0.;
-    // #pragma omp parallel for
-    //     for (const auto &part : m_particles) {
-    // #pragma omp atomic
-    //         total_mass += part.mass;
-    //     }
-    Logging::info(std::format("Total mass of system: {}", m_total_mass));
+    Logging::info("Total mass of system: {}", m_total_mass);
 
     return total_mass;
 }
 auto System::update_total_mass() -> void { m_total_mass = calc_total_mass(); }
 
-auto System::calc_half_mass(const ShellVec &shells) const -> double {
+auto System::calc_half_mass_radius(const ShellVec &shells) const -> double {
 
     auto temp_mass = 0.;
     for (const auto &shell : shells) {
         if (temp_mass >= m_total_mass * 0.5) {
-            return temp_mass;
+            return shell.m_upper;
         }
         temp_mass += shell.m_mass;
     }
@@ -100,27 +92,32 @@ auto System::calc_half_mass(const ShellVec &shells) const -> double {
     std::exit(-1);
 }
 
-auto System::update_half_mass(const ShellVec &shells) -> void {
-    m_half_mass = calc_half_mass(shells);
+auto System::update_half_mass_radius(const ShellVec &shells) -> void {
+    m_half_mass_rad = calc_half_mass_radius(shells);
 }
 
-auto System::calc_scale_length() const -> double { return m_half_mass / (1 / std::sqrt(2)); }
+auto System::calc_scale_length() const -> double { return m_half_mass_rad / (1 + std::sqrt(2)); }
 auto System::update_scale_length() -> void { m_scale_length = calc_scale_length(); }
 
 auto System::update_min_rad(const double rad) -> void { m_min_rad = std::min(m_min_rad, rad); }
 auto System::update_max_rad(const double rad) -> void { m_max_rad = std::max(m_max_rad, rad); }
 
-auto System::density_hernquist(const double rad) -> double {
-    return (m_total_mass / (2 * std::numbers::pi)) * (m_scale_length / rad) *
-           (1 / std::pow(rad + m_scale_length, 3));
-}
-
-auto System::get_constrained_mass(const double rad) -> double {
+auto System::get_constrained_shell_mass(const double lower_rad, const double upper_rad) const
+    -> double {
     return std::accumulate(
         m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
-            if (part.distance <= rad) {
-                return sum + part.mass;
+            if (part.distance >= lower_rad and part.distance <= upper_rad) {
+                // return sum + part.mass;
+                return sum + km_mass;
             }
-            return 0.;
+            return sum + 0.;
         });
+}
+
+auto System::density_hernquist(const double rad) const -> double {
+    return (m_total_mass * m_scale_length) /
+           (2 * std::numbers::pi * rad * std::pow(rad + m_scale_length, 3));
+}
+auto System::newton_force(const double rad) const -> double {
+    return -m_total_mass * km_mass / (std::pow(rad + m_scale_length, 2));
 }
