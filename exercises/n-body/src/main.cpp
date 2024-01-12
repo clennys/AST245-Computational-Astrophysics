@@ -18,7 +18,7 @@ auto init_system(const std::string_view &path) {
     g_system = System(path);
 
     auto furthest_particle = g_system.get_max_distance();
-    Histogram hist(100'000, furthest_particle.distance, g_system);
+    Histogram hist(100'000, furthest_particle.m_distance, g_system);
 
     // g_system.update_half_mass(hist.m_shells);
     g_system.update_half_mass_radius(hist.m_shells);
@@ -89,16 +89,16 @@ auto plot_rho_step_1() {
         const auto k_shell_volume =
             k_shell_vol_pref * (std::pow(upper_rad, 3) - std::pow(lower_rad, 3));
 
-        const auto k_no_parts_in_shell = k_shell_mass / g_system.km_mass;
+        const auto k_no_parts_in_shell = k_shell_mass / Particle3D::km_non_dim_mass;
 
         const auto k_shell_rho = fit_for_plot(k_shell_mass / k_shell_volume);
         const auto k_hern_rho =
             fit_for_plot(g_system.density_hernquist((lower_rad + upper_rad) / 2));
 
-        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * g_system.km_mass / k_shell_volume;
-        // const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / g_system.km_mass;
-        // const auto k_rho_error = std::sqrt(no_parts_in_hern) * g_system.km_mass / k_shell_volume;
-        // const auto k_rho_error = std::sqrt(avg_parts) * g_system.km_mass / k_shell_volume;
+        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * Particle3D::km_non_dim_mass / k_shell_volume;
+        // const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / Particle3D::non_dim_mass;
+        // const auto k_rho_error = std::sqrt(no_parts_in_hern) * Particle3D::non_dim_mass / k_shell_volume;
+        // const auto k_rho_error = std::sqrt(avg_parts) * Particle3D::non_dim_mass / k_shell_volume;
 
         // Logging::info("Parts hern: {}, num: {}", no_parts_in_hern, k_no_parts_in_shell);
         // Logging::info("Lambda: {}", std::abs(no_parts_in_hern - k_no_parts_in_shell), 2);
@@ -156,7 +156,10 @@ auto plot_forces_step_2() {
     g_system.m_min_rad = 0.005;
 
     std::vector<double> analytic_force;
+    std::vector<double> direct_force;
     std::vector<double> idx;
+
+		// TODO: (dhub) Extract to System Class
 
     for (int i = 0; i < no_bins; i++) {
         auto val = g_system.newton_force(dr_lin_to_log(i));

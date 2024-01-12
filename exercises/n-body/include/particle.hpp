@@ -5,12 +5,16 @@
 
 class Particle3D {
   public:
-    Eigen::Vector3d position;
-    Eigen::Vector3d velocity;
-    double softening;
-    double potential;
-    double distance;
-    double mass;
+    Eigen::Vector3d m_position;
+    Eigen::Vector3d m_velocity;
+		Eigen::Vector3d m_direct_force;
+    double m_potential;
+    double m_distance;
+    double m_mass;
+		// TODO: (dhub) Change input, consider removing
+		double m_softening;
+    constexpr static double km_non_dim_mass = 1.;
+    double static s_softening;
 
     /// Calculate the Norm of the position vector and return it
     auto calc_origin_dist() -> double;
@@ -19,6 +23,15 @@ class Particle3D {
 
     /// Print a summary of the particle properties
     auto print_summary() const -> void;
+
+		/// Calculate direct force with another particle
+		auto calc_direct_force_with_part(const Particle3D &other_part) -> Eigen::Vector3d;
+
+		/// Update direct force on particle
+		auto update_direct_force(Eigen::Vector3d force) -> void;
+
+		auto norm_force() -> double;
+
 };
 
 using PartVec = std::vector<Particle3D>;

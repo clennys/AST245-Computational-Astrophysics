@@ -8,10 +8,6 @@
 
 class System {
   public:
-    // Use fixed mass
-    // static constexpr double km_mass = 92.4259;
-    static constexpr double km_mass = 1.;
-
     PartVec m_particles;
     double m_total_mass = 0.;
     double m_half_mass_rad = 0.;
@@ -62,6 +58,8 @@ class System {
 
     /// Return the mass found within a radius, not using `Histogram` or `Shells`
     auto get_constrained_shell_mass(const double lower_rad, const double upper_rad) const -> double;
+
+		auto calc_direct_force() -> void;
 
   private:
 };
