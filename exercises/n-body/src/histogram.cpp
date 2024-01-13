@@ -11,22 +11,24 @@
 #include <format>
 #include <mutex>
 
-Histogram::Histogram(const uint no_bins, const double radius, System &p_system) {
+Histogram::Histogram(const int no_bins, const double radius, System &p_system, bool do_log) {
 
     // WARN: (aver) Addded one to radious to securely place all particles into shells later on
     auto bin_radius = (radius + 1) / static_cast<int>(no_bins);
-    auto lower_rad = 0.;
-    auto upper_rad = bin_radius;
+    double lower_rad;
+    double upper_rad;
 
     // setup bins/shells
-    for (uint i = 0; i < no_bins; i++) {
-        // Logging::dbg(lower_rad);
-        // Logging::dbg(upper_rad);
+    for (int i = 0; i <= no_bins; i++) {
+        if (do_log) {
+            lower_rad = p_system.convert_lin_to_log(no_bins, i);
+            upper_rad = p_system.convert_lin_to_log(no_bins, i + 1);
+        } else {
+            lower_rad = i * bin_radius;
+            upper_rad = (i + 1) * bin_radius;
+        }
 
-        // m_shells.push_back(Shell(lower_rad, upper_rad));
         m_shells.emplace_back(Shell(i, lower_rad, upper_rad));
-        lower_rad += bin_radius;
-        upper_rad += bin_radius;
     }
 
     Logging::info("Sorting Particles into shells...");

@@ -18,6 +18,8 @@ auto init_system(const std::string_view &path) {
     g_system = System(path);
 
     auto furthest_particle = g_system.get_max_distance();
+
+    // use this shell to calculcate half_mass_radius, and scale_length
     Histogram hist(100'000, furthest_particle.m_distance, g_system);
 
     // g_system.update_half_mass(hist.m_shells);
@@ -45,18 +47,17 @@ auto plot_rho_step_1() {
     constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
 
 #if 0
-    // auto local_system(g_system);
-    // Histogram hist2(50, furthest_particle.distance, local_system);
+    auto furthest_particle = g_system.get_max_distance();
+    Histogram hist(no_bins, furthest_particle.m_distance, g_system, true);
+    for (const auto &shell : hist.m_shells) {
 
-    auto i = 0;
-    for (const auto &shell : hist2.m_shells) {
 
         const auto k_shell_volume =
             k_shell_vol_pref * (std::pow(shell.m_upper, 3) - std::pow(shell.m_lower_inc, 3));
 
         const auto k_shell_rho = shell.m_mass / k_shell_volume;
 
-        auto val = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) * .5);
+        auto hern_rho = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) / 2);
 
         Logging::info("\n\tH: {}\n\tN: {}", val, k_shell_rho);
 
