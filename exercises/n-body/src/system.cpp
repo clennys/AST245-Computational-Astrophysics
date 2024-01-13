@@ -3,6 +3,8 @@
 #include "logging.hpp"
 #include "particle.hpp"
 
+#include <omp.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -135,13 +137,15 @@ auto System::newton_force(const double rad) const -> double {
 }
 
 auto System::calc_direct_force() -> void {
+#pragma omp parallel for
     for (uint i = 0; i < m_particles.size(); i++) {
-        Eigen::Vector3d sum_force_inter_part(0);
+        Eigen::Vector3d sum_force_inter_part({0, 0, 0});
         for (uint j = 0; j < m_particles.size(); j++) {
             if (i != j) {
                 sum_force_inter_part += m_particles[i].calc_direct_force_with_part(m_particles[j]);
             }
         }
+#pragma omp critical
         m_particles[i].update_direct_force(sum_force_inter_part);
     }
 }

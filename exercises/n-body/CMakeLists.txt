@@ -68,8 +68,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
-    # omp
-    tbb
     mgl
-    # mgl-qt5
+    omp
+    tbb
 )

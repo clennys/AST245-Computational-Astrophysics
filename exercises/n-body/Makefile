@@ -7,5 +7,4 @@ build:
 	cmake -B build && cmake --build build --parallel
 
 clean:
-	rm -r build
-	rm *.png
+	rm -rf build *.png *.jpg
