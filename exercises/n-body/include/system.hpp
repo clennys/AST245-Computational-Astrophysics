@@ -59,7 +59,12 @@ class System {
     /// Return the mass found within a radius, not using `Histogram` or `Shells`
     auto get_constrained_shell_mass(const double lower_rad, const double upper_rad) const -> double;
 
-		auto calc_direct_force() -> void;
+    auto calc_direct_force() -> void;
+
+    /// Helper method to adjust a radius to a bin size
+    auto convert_lin_to_log(const int no_bins, const double val) const -> double;
+    /// Helper method to add a minimal epsilon to values to circumvent log(0) errors
+    static auto fit_log_to_plot(const double val) -> double;
 
   private:
 };

@@ -72,17 +72,9 @@ auto plot_rho_step_1() {
 
     g_system.m_min_rad = 0.005;
 
-    // TODO: (aver) make these static/member methods of gsystem
-    constexpr auto dr_lin_to_log = [&](const double i) {
-        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_bins);
-    };
-    constexpr auto fit_for_plot = [](const double x) {
-        return x + std::numeric_limits<double>::epsilon();
-    };
-
     for (int r = 0; r <= no_bins; r++) {
-        auto lower_rad = dr_lin_to_log(r);
-        auto upper_rad = dr_lin_to_log(r + 1);
+        auto lower_rad = g_system.convert_lin_to_log(no_bins, r);
+        auto upper_rad = g_system.convert_lin_to_log(no_bins, r + 1);
         Logging::info("bin: {}, lower: {}, upper {}", r, lower_rad, upper_rad);
 
         const auto k_shell_mass = g_system.get_constrained_shell_mass(lower_rad, upper_rad);
@@ -91,9 +83,9 @@ auto plot_rho_step_1() {
 
         const auto k_no_parts_in_shell = k_shell_mass / Particle3D::km_non_dim_mass;
 
-        const auto k_shell_rho = fit_for_plot(k_shell_mass / k_shell_volume);
+        const auto k_shell_rho = System::fit_log_to_plot(k_shell_mass / k_shell_volume);
         const auto k_hern_rho =
-            fit_for_plot(g_system.density_hernquist((lower_rad + upper_rad) / 2));
+            System::fit_log_to_plot(g_system.density_hernquist((lower_rad + upper_rad) / 2));
 
         const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * Particle3D::km_non_dim_mass / k_shell_volume;
         // const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / Particle3D::non_dim_mass;
@@ -146,12 +138,6 @@ auto plot_rho_step_1() {
 auto plot_forces_step_2() {
 
     constexpr auto no_bins = 100;
-    constexpr auto dr_lin_to_log = [&](const double i) {
-        return g_system.m_min_rad * std::pow(g_system.m_max_rad / g_system.m_min_rad, i / no_bins);
-    };
-    constexpr auto fit_for_plot = [](const double x) {
-        return x + std::numeric_limits<double>::epsilon();
-    };
 
     g_system.m_min_rad = 0.005;
 
@@ -162,9 +148,9 @@ auto plot_forces_step_2() {
 		// TODO: (dhub) Extract to System Class
 
     for (int i = 0; i < no_bins; i++) {
-        auto val = g_system.newton_force(dr_lin_to_log(i));
+        auto val = g_system.newton_force(g_system.convert_lin_to_log(no_bins, i));
         Logging::info("{}", val);
-        analytic_force.emplace_back(fit_for_plot(val));
+        analytic_force.emplace_back(System::fit_log_to_plot(val));
         idx.emplace_back(i);
     }
 

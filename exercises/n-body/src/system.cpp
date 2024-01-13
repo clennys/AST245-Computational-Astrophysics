@@ -133,3 +133,10 @@ auto System::calc_direct_force() -> void {
         m_particles[i].update_direct_force(sum_force_inter_part);
     }
 }
+auto System::convert_lin_to_log(const int no_bins, const double val) const -> double {
+    return m_min_rad * std::pow(m_max_rad / m_min_rad, val / no_bins);
+}
+
+auto System::fit_log_to_plot(const double val) -> double {
+    return val + std::numeric_limits<double>::epsilon();
+}
