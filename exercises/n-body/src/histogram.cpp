@@ -33,55 +33,9 @@ Histogram::Histogram(const int no_bins, const double radius, System &p_system, b
 
     Logging::info("Sorting Particles into shells...");
 
-#if 0
-    std::mutex shell_mutex;
-
-    std::for_each(
-        std::execution::par,
-        p_system.m_particles.begin(),
-        p_system.m_particles.end(),
-        [this, &shell_mutex, &p_system](const Particle3D &part) {
-            // use this loop to get total mass
-            p_system.m_total_mass += part.mass;
-            p_system.update_min_rad(part.distance);
-
-            auto shell_it =
-                std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
-                    return part.distance < shell.m_upper && shell.m_lower_inc >= part.distance;
-                });
-
-            std::lock_guard<std::mutex> guard(shell_mutex); // Protect m_shells
-            // use this loop to get total mass
-            p_system.m_total_mass += part.mass;
-
-            if (shell_it != m_shells.end()) {
-                shell_it->m_particles.emplace_back(part);
-                shell_it->m_mass += part.mass;
-            } else {
-                // handle the case, where a particle is not placed into any of the shells...
-                Logging::err(std::format("Particle with distance: {}, was not placed into a "
-                                         "shell.\n\tShell bound: [{}, {})",
-                                         part.distance,
-                                         shell_it->m_lower_inc,
-                                         shell_it->m_upper));
-            }
-        });
-#else
     for (const auto &part : p_system.m_particles) {
-
-        // use this loop to get total mass
-        // p_system.m_total_mass += part.mass;
-        p_system.m_total_mass += Particle3D::km_non_dim_mass;
-
-        p_system.update_min_rad(part.m_distance);
-        // this is calculated before calling the histogram constructor
-        p_system.update_max_rad(part.m_distance);
-
         auto shell_it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
-            // Logging::dbg(std::format("Working on shell lower: {}", shell.m_lower_inc));
-            // Logging::dbg(std::format("Working on shell upper: {}", shell.m_upper));
-            // Logging::dbg(std::format("Working on particle with distance: {}", part.distance));
-            return part.m_distance < shell.m_upper && shell.m_lower_inc >= part.m_distance;
+            return part.m_distance >= shell.m_lower_inc and part.m_distance < shell.m_upper;
         });
 
         if (shell_it != m_shells.end()) {
@@ -100,9 +54,8 @@ Histogram::Histogram(const int no_bins, const double radius, System &p_system, b
             // std::exit(-1);
         }
     }
-#endif
 
-    Logging::info("...Particles emplaced!");
+    Logging::info("...Particles emplaced into {} Shells!", no_bins);
 }
 
 Histogram::~Histogram() {}

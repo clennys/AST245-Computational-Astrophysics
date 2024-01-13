@@ -48,65 +48,92 @@ auto plot_rho_step_1() {
 
     // precalculated (by the compiler!) constant for shell volume
     constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
+    constexpr auto no_bins = 50;
+    const auto avg_parts = static_cast<int>(g_system.m_particles.size()) / no_bins;
+    const auto std_dev = std::sqrt(avg_parts);
 
-#if 0
+    // set minimal radius to something else than 0, otherwise errors ensue
+
     auto sum = 0.;
+#if 1
     auto furthest_particle = g_system.get_max_distance();
     Histogram hist(no_bins, furthest_particle.m_distance, g_system, true);
     for (const auto &shell : hist.m_shells) {
+        // FIXME: (aver) fix plotting of hernquist
 
+        Logging::info(
+            "bin: {}, lower: {}, upper {}", shell.m_index, shell.m_lower_inc, shell.m_upper);
+        Logging::info("Shell mass: {}", shell.m_mass);
 
+        // TODO: (aver) move this calculation into a method of shell
         const auto k_shell_volume =
             k_shell_vol_pref * (std::pow(shell.m_upper, 3) - std::pow(shell.m_lower_inc, 3));
 
+        // TODO: (aver) move this into a method of shell as well
         const auto k_shell_rho = shell.m_mass / k_shell_volume;
+        std::cerr << k_shell_rho << std::endl;
 
         auto hern_rho = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) / 2);
+        std::cerr << hern_rho << std::endl;
 
-        Logging::info("\n\tH: {}\n\tN: {}", val, k_shell_rho);
+        // NOTE: (aver) \lambda = number of shells on average throughout all bins
+        const auto rho_err = std_dev * Particle3D::km_non_dim_mass / k_shell_volume;
 
-        index.emplace_back(i);
-        hernquist_dens.emplace_back(val);
-        numeric_dens.emplace_back(k_shell_rho);
-        i++;
-    }
-#else
-    constexpr auto no_bins = 50;
-    constexpr auto avg_parts = 50009. / no_bins;
-    constexpr auto std_dev = std::sqrt(avg_parts);
+        // const auto k_no_parts_in_shell = shell.m_mass / Particle3D::km_non_dim_mass;
+        // // NOTE: (aver) \lambda = number of shells in current bin
+        // const auto rho_err =
+        //     std::sqrt(k_no_parts_in_shell) * Particle3D::km_non_dim_mass / k_shell_volume;
 
-    g_system.m_min_rad = 0.005;
+        // // NOTE: (aver) \lambda = number of shells in a Hernquist bin
+        // const auto no_parts_in_hern = (hern_rho * k_shell_volume) / Particle3D::km_non_dim_mass;
+        // const auto rho_err =
+        //     std::sqrt(no_parts_in_hern) * Particle3D::km_non_dim_mass / k_shell_volume;
+
+        // index.emplace_back(static_cast<int>(shell.m_index));
+        index.emplace_back(shell.m_lower_inc);
+
+        hernquist_dens.emplace_back(System::fit_log_to_plot(hern_rho));
+        numeric_dens.emplace_back(System::fit_log_to_plot(k_shell_rho));
+        rho_error.emplace_back(rho_err);
 
         sum += shell.m_mass;
+        // Logging::info("\n\tH: {}\n\tN: {}", hern_rho, k_shell_rho);
+    }
+
+#else
     for (int r = 0; r <= no_bins; r++) {
         auto lower_rad = g_system.convert_lin_to_log(no_bins, r);
         auto upper_rad = g_system.convert_lin_to_log(no_bins, r + 1);
         Logging::info("bin: {}, lower: {}, upper {}", r, lower_rad, upper_rad);
 
         const auto k_shell_mass = g_system.get_constrained_shell_mass(lower_rad, upper_rad);
+        Logging::info("Shell mass: {}", k_shell_mass);
+        sum += k_shell_mass;
         const auto k_shell_volume =
             k_shell_vol_pref * (std::pow(upper_rad, 3) - std::pow(lower_rad, 3));
 
         const auto k_no_parts_in_shell = k_shell_mass / Particle3D::km_non_dim_mass;
 
-        const auto k_shell_rho = System::fit_log_to_plot(k_shell_mass / k_shell_volume);
-        const auto k_hern_rho =
-            System::fit_log_to_plot(g_system.density_hernquist((lower_rad + upper_rad) / 2));
+        const auto k_shell_rho = k_shell_mass / k_shell_volume;
+        const auto k_hern_rho = g_system.density_hernquist((lower_rad + upper_rad) / 2);
 
-        const auto k_rho_error = std::sqrt(k_no_parts_in_shell) * Particle3D::km_non_dim_mass / k_shell_volume;
-        // const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / Particle3D::non_dim_mass;
-        // const auto k_rho_error = std::sqrt(no_parts_in_hern) * Particle3D::non_dim_mass / k_shell_volume;
-        // const auto k_rho_error = std::sqrt(avg_parts) * Particle3D::non_dim_mass / k_shell_volume;
+        // NOTE: (aver) \lambda = number of shells in current bin
+        // const auto k_rho_error =
+        //     std::sqrt(k_no_parts_in_shell) * Particle3D::km_non_dim_mass / k_shell_volume;
 
-        // Logging::info("Parts hern: {}, num: {}", no_parts_in_hern, k_no_parts_in_shell);
-        // Logging::info("Lambda: {}", std::abs(no_parts_in_hern - k_no_parts_in_shell), 2);
+        // NOTE: (aver) \lambda = number of shells in a Hernquist bin
+        const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / Particle3D::km_non_dim_mass;
+        // const auto k_rho_error =
+        //     std::sqrt(no_parts_in_hern) * Particle3D::km_non_dim_mass / k_shell_volume;
 
-        // Logging::info("\n\tHer: {}\n\tNum: {}\n\tErr: {}", k_hern_rho, k_shell_rho, k_rho_error);
+        // NOTE: (aver) \lambda = number of shells on average throughout all bins
+        const auto k_rho_error = std_dev * Particle3D::km_non_dim_mass / k_shell_volume;
 
-        index.emplace_back(r);
-        hernquist_dens.emplace_back(k_hern_rho);
-        numeric_dens.emplace_back(k_shell_rho);
+        index.emplace_back(lower_rad);
+        hernquist_dens.emplace_back(System::fit_log_to_plot(k_hern_rho));
+        numeric_dens.emplace_back(System::fit_log_to_plot(k_shell_rho));
         rho_error.emplace_back(k_rho_error);
+
         sum += shell.m_mass;
     }
 #endif
@@ -125,6 +152,7 @@ auto plot_rho_step_1() {
     gr.SetRange('x', x);
     gr.SetRange('y', y_min, y_max);
 
+    gr.SetCoor(mglLogLog);
     gr.Axis();
 
     gr.Label('x', "Radius [l]", 0);
@@ -155,13 +183,21 @@ auto plot_forces_step_2() {
     std::vector<double> direct_force;
     std::vector<double> idx;
 
-		// TODO: (dhub) Extract to System Class
+    // TODO: (dhub) Extract to System Class
 
     for (int i = 0; i < no_bins; i++) {
         auto val = g_system.newton_force(g_system.convert_lin_to_log(no_bins, i));
         Logging::info("{}", val);
         analytic_force.emplace_back(System::fit_log_to_plot(val));
         idx.emplace_back(i);
+    }
+
+    auto furthest_particle = g_system.get_max_distance();
+    g_system.calc_direct_force();
+    auto dir_force_hist = Histogram(no_bins, furthest_particle.m_distance, g_system, true);
+    for (const auto &particle : dir_force_hist.m_shells) {
+        // TODO: (aver) add logic for getting values from direct force calculation
+        continue;
     }
 
     mglData indices = idx;
@@ -192,8 +228,8 @@ auto main(const int argc, const char *const argv[]) -> int {
     init_system(argv[1]);
 
     // task 1
-    // plot_rho_step_1();
-    plot_forces_step_2();
+    plot_rho_step_1();
+    // plot_forces_step_2();
 
     // task 2
 
