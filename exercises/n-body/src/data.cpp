@@ -45,20 +45,21 @@ auto Data::read_data(const std::filesystem::path &path_name)
             } else if (i == 7) {
                 part.m_velocity.z() = std::stod(word);
             } else if (i == 8) {
+                // WARN: (aver) ignore softening for now
                 // part.m_softening = std::stod(word);
             } else if (i == 9) {
                 part.m_potential = std::stod(word);
             }
-            part.update_origin_dist();
-            particles.push_back(part);
             i++;
-            // part.print_summary();
         }
         // in case the file is formatted in an invalid way
         if (i != 10) {
             return std::nullopt;
         }
+        part.update_origin_dist();
+        particles.push_back(part);
     }
+
     file.close();
     return particles;
 }
