@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+double Particle3D::s_softening = 0.;
+
 auto Particle3D::calc_origin_dist() -> double { return this->m_position.norm(); }
 
 auto Particle3D::update_origin_dist() -> void { this->m_distance = calc_origin_dist(); }
@@ -24,7 +26,8 @@ auto Particle3D::calc_direct_force_with_part(const Particle3D &other_part) -> Ei
     // (dhub) Source:
     // https://www.physicsforums.com/threads/solving-n-body-simulation-problems-with-gravitational-equations.455058/
     auto dist_part = this->m_position - other_part.m_position;
-    auto dist_norm = std::pow(dist_part.dot(dist_part) + std::pow(m_softening, 2), 3/2) ;
+    auto dist_norm =
+        std::pow(dist_part.dot(dist_part) + std::pow(Particle3D::s_softening, 2), 3 / 2);
 
     return -other_part.km_non_dim_mass * dist_part / dist_norm;
 }

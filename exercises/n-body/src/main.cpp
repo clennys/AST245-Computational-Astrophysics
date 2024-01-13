@@ -26,6 +26,7 @@ auto init_system(const std::string_view &path) {
     g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
     g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
+    Particle3D::s_softening = g_system.m_softening;
 
     Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
