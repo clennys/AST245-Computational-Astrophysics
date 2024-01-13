@@ -3,6 +3,7 @@
 #include "particle.hpp"
 #include "system.hpp"
 
+#include <cassert>
 #include <cmath>
 #include <format>
 #include <mgl2/mgl.h>
@@ -16,6 +17,7 @@ static System g_system;
 // TODO: (aver) consider making this a factory like static function on the `System` class
 auto init_system(const std::string_view &path) {
     g_system = System(path);
+    g_system.precalc_consts();
 
     auto furthest_particle = g_system.get_max_distance();
 
@@ -48,6 +50,7 @@ auto plot_rho_step_1() {
     constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
 
 #if 0
+    auto sum = 0.;
     auto furthest_particle = g_system.get_max_distance();
     Histogram hist(no_bins, furthest_particle.m_distance, g_system, true);
     for (const auto &shell : hist.m_shells) {
@@ -74,6 +77,7 @@ auto plot_rho_step_1() {
 
     g_system.m_min_rad = 0.005;
 
+        sum += shell.m_mass;
     for (int r = 0; r <= no_bins; r++) {
         auto lower_rad = g_system.convert_lin_to_log(no_bins, r);
         auto upper_rad = g_system.convert_lin_to_log(no_bins, r + 1);
@@ -103,8 +107,12 @@ auto plot_rho_step_1() {
         hernquist_dens.emplace_back(k_hern_rho);
         numeric_dens.emplace_back(k_shell_rho);
         rho_error.emplace_back(k_rho_error);
+        sum += shell.m_mass;
     }
 #endif
+
+    // Logging::dbg("total mass {}, expected 50010", sum);
+    assert(sum == 50010);
 
     mglData x = index;
     mglData y_hern = hernquist_dens;

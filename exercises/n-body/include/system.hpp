@@ -25,6 +25,8 @@ class System {
     System &operator=(const System &) = default;
     ~System();
 
+    auto precalc_consts() -> void;
+
     auto transform_vectors()
         -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>;
 

@@ -4,6 +4,7 @@
 #include "particle.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <format>
 #include <future>
@@ -24,6 +25,17 @@ System::System(const std::string_view &path_name) {
 // TODO: (aver) Empty constructor needed for later global initialization
 System::System() {}
 System::~System() {}
+
+auto System::precalc_consts() -> void {
+    for (const auto &part : m_particles) {
+        update_min_rad(part.m_distance);
+        update_max_rad(part.m_distance);
+        m_total_mass += Particle3D::km_non_dim_mass;
+    }
+    // WARN: (aver) We need min rad to be larger than 0, otherwise many following calculations have
+    // a divide by 0!
+    assert(m_min_rad > 0.);
+}
 
 auto System::transform_vectors()
     -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> {
@@ -124,7 +136,7 @@ auto System::newton_force(const double rad) const -> double {
 
 auto System::calc_direct_force() -> void {
     for (uint i = 0; i < m_particles.size(); i++) {
-			Eigen::Vector3d sum_force_inter_part(0);
+        Eigen::Vector3d sum_force_inter_part(0);
         for (uint j = 0; j < m_particles.size(); j++) {
             if (i != j) {
                 sum_force_inter_part += m_particles[i].calc_direct_force_with_part(m_particles[j]);
