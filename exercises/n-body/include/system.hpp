@@ -98,6 +98,10 @@ class System {
 
     auto update_relaxation() -> void;
 
+    auto calc_relaxation() -> double;
+
+    auto update_relaxation() -> void;
+
   private:
     /// Calculate runtime constants for system deployment
     auto precalc_consts() -> void;
