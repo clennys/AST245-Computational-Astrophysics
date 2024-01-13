@@ -250,3 +250,18 @@ auto System::solver_do_step(const double delta_time) -> void {
             velocity_mid + (part.m_direct_force / System::k_non_dim_mass) * delta_time / 2;
     }
 }
+
+auto System::calc_relaxation() -> double {
+	// NOTE: (dhub) Assume G=1
+	double nr_part = m_particles.size();
+	double circular_velocity = std::sqrt(m_total_mass * m_half_mass_rad / m_half_mass_rad);
+	// TODO: (dhub) If not working maybe this alternative will?
+	//double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
+	double time_cross = nr_part / circular_velocity;
+	return nr_part / (8 * std::log(nr_part)) * time_cross;
+}
+
+auto System::update_relaxation() -> void{
+	m_relaxation = calc_relaxation();
+}
+

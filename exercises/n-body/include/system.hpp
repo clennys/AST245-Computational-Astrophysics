@@ -28,6 +28,7 @@ class System {
     double m_min_rad = std::numeric_limits<double>::max();
     double m_max_rad = 0.;
     double m_softening = 0.;
+		double m_relaxation = 0.;
 
     explicit System(const std::string_view &path_name);
 
@@ -94,6 +95,10 @@ class System {
 
     /// Do one step forward in the system
     auto solver_do_step(const double delta_time) -> void;
+
+		auto calc_relaxation() -> double;
+
+		auto update_relaxation() -> void;
 
   private:
 };
