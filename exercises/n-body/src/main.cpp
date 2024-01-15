@@ -37,10 +37,6 @@ auto init_system(const std::string_view &path) {
 }
 
 auto plot_rho_step_1() {
-    mglGraph gr;
-    // set plot parameters
-    gr.SetSize(1920, 1080);
-
     std::vector<double> index;
     std::vector<double> hernquist_dens;
     std::vector<double> numeric_dens;
@@ -149,9 +145,13 @@ auto plot_rho_step_1() {
     auto y_min = std::min(y_hern.Minimal(), y_num.Minimal());
     auto y_max = std::max(y_hern.Maximal(), y_num.Maximal());
 
+    // set plot parameters
+    mglGraph gr(0, 3000, 2000);
+
     gr.SetRange('x', x);
     gr.SetRange('y', y_min, y_max);
 
+    gr.SetFontSize(2);
     gr.SetCoor(mglLogLog);
     gr.Axis();
 
@@ -177,46 +177,67 @@ auto plot_forces_step_2() {
 
     constexpr auto no_bins = 100;
 
-    g_system.m_min_rad = 0.005;
-
     std::vector<double> analytic_force;
     std::vector<double> direct_force;
     std::vector<double> idx;
 
     // TODO: (dhub) Extract to System Class
 
-    for (int i = 0; i < no_bins; i++) {
+    for (int i = 0; i <= no_bins; i++) {
         auto val = g_system.newton_force(g_system.convert_lin_to_log(no_bins, i));
         Logging::info("{}", val);
         analytic_force.emplace_back(System::fit_log_to_plot(val));
-        idx.emplace_back(i);
     }
 
     auto furthest_particle = g_system.get_max_distance();
     g_system.calc_direct_force();
     auto dir_force_hist = Histogram(no_bins, furthest_particle.m_distance, g_system, true);
-    for (const auto &particle : dir_force_hist.m_shells) {
+    for (const auto &shell : dir_force_hist.m_shells) {
         // TODO: (aver) add logic for getting values from direct force calculation
-        continue;
+
+        auto avg_force = Eigen::Vector3d({0., 0., 0.});
+        for (const auto &part : shell.m_particles) {
+            avg_force += part.m_direct_force;
+        }
+
+        auto val = avg_force.norm() == 0.
+                       ? 0.
+                       : avg_force.norm() / static_cast<int>(shell.m_particles.size());
+        direct_force.emplace_back(val);
+        // Logging::info("id: {}, {}", shell.m_index, val);
+
+        idx.emplace_back(shell.m_lower_inc);
     }
 
-    mglData indices = idx;
+    mglData x = idx;
     mglData aforce = analytic_force;
+    mglData nforce = direct_force;
 
-    mglGraph gr;
-    // set plot parameters
-    gr.SetSize(1920, 1080);
+    auto y_min = std::min(aforce.Minimal(), nforce.Minimal());
+    auto y_max = std::max(aforce.Maximal(), nforce.Maximal());
 
-    gr.SetRange('x', indices);
-    gr.SetRange('y', aforce);
+    mglGraph gr(0, 3000, 2000);
 
+    gr.SetRange('x', x);
+    // gr.SetRange('y', aforce);
+    gr.SetRange('y', y_min, y_max);
+
+    gr.SetFontSize(2);
+    gr.SetCoor(mglLogX);
     gr.Axis();
 
-    gr.Plot(indices, aforce, "b");
+    gr.Label('x', "Radius [l]", 0);
+    gr.Label('y', "Force", 0);
+
+    gr.Plot(x, aforce, "b");
     gr.AddLegend("Analytic", "b");
+
+    gr.Plot(x, nforce, "r.");
+    gr.AddLegend("Numeric", "r.");
 
     gr.Legend();
     gr.WritePNG("forces.png");
+    gr.WritePNG("forces.jpg");
 }
 
 auto main(const int argc, const char *const argv[]) -> int {
