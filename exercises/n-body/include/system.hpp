@@ -8,6 +8,8 @@
 
 class System {
   public:
+    static constexpr double km_mean_inter_dist = 3.6078845976382845;
+
     PartVec m_particles;
     double m_total_mass = 0.;
     double m_half_mass_rad = 0.;
@@ -25,6 +27,7 @@ class System {
     System &operator=(const System &) = default;
     ~System();
 
+    auto precalc_mean_inter_part_dist() -> double;
     auto precalc_consts() -> void;
 
     auto transform_vectors()

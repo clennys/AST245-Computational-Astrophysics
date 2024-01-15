@@ -7,6 +7,7 @@
 #include <cmath>
 #include <format>
 #include <mgl2/mgl.h>
+#include <numeric>
 #include <string_view>
 
 /// Particles read in and used in the tasks.
@@ -27,13 +28,14 @@ auto init_system(const std::string_view &path) {
     // g_system.update_half_mass(hist.m_shells);
     g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
-    g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
-    Particle3D::s_softening = g_system.m_softening;
+    // g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
+    // Particle3D::s_softening = g_system.m_softening;
+    Particle3D::s_softening = System::km_mean_inter_dist / 100'000;
 
     Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
     Logging::info("Scaling length of system:   {:>12.10f}", g_system.m_scale_length);
-    Logging::info("Softening of system:        {:>12.10f}", g_system.m_softening);
+    Logging::info("Softening of system:        {:>12.10f}", Particle3D::s_softening);
 }
 
 auto plot_rho_step_1() {
@@ -93,7 +95,6 @@ auto plot_rho_step_1() {
         rho_error.emplace_back(rho_err);
 
         sum += shell.m_mass;
-        // Logging::info("\n\tH: {}\n\tN: {}", hern_rho, k_shell_rho);
     }
 
 #else
@@ -168,14 +169,18 @@ auto plot_rho_step_1() {
     gr.AddLegend("Poissonian Error", "q");
 
     gr.Legend();
-    gr.WriteFrame("hernquist.jpg");
-    gr.WriteFrame("hernquist.png");
+    gr.WriteJPEG("hernquist.jpg");
+    gr.WritePNG("hernquist.png");
     Logging::info("Hernquist plotted.");
 }
 
 auto plot_forces_step_2() {
+    constexpr auto no_bins = 50;
 
-    constexpr auto no_bins = 100;
+// This should be a one time calculation and then save it in the System class
+#if 0
+    auto mean_inter_idst = g_system.precalc_mean_inter_part_dist();
+#endif
 
     std::vector<double> analytic_force;
     std::vector<double> direct_force;
@@ -184,29 +189,38 @@ auto plot_forces_step_2() {
     // TODO: (dhub) Extract to System Class
 
     for (int i = 0; i <= no_bins; i++) {
-        auto val = g_system.newton_force(g_system.convert_lin_to_log(no_bins, i));
-        Logging::info("{}", val);
+        auto rad = g_system.convert_lin_to_log(no_bins, i);
+        auto val = g_system.newton_force(rad);
         analytic_force.emplace_back(System::fit_log_to_plot(val));
     }
 
     auto furthest_particle = g_system.get_max_distance();
+    Logging::info("Calculating direct forces...");
     g_system.calc_direct_force();
+
+    Logging::info("Creating Histogram with {} shells...", no_bins);
     auto dir_force_hist = Histogram(no_bins, furthest_particle.m_distance, g_system, true);
+
     for (const auto &shell : dir_force_hist.m_shells) {
-        // TODO: (aver) add logic for getting values from direct force calculation
 
-        auto avg_force = Eigen::Vector3d({0., 0., 0.});
-        for (const auto &part : shell.m_particles) {
-            avg_force += part.m_direct_force;
-        }
+        // TODO: (aver) we need to convert vector force to the center of the spherical distribution
+        auto val = std::accumulate(shell.m_particles.begin(),
+                                   shell.m_particles.end(),
+                                   0.,
+                                   [](double sum, const Particle3D &part) {
+                                       auto norm = part.m_position.norm();
+                                       auto projection =
+                                           part.m_position.dot(part.m_direct_force) / norm;
+                                       return sum + projection;
+                                   });
+        val = shell.m_particles.size() == 0 ? 0. : val / shell.m_particles.size();
 
-        auto val = avg_force.norm() == 0.
-                       ? 0.
-                       : avg_force.norm() / static_cast<int>(shell.m_particles.size());
-        direct_force.emplace_back(val);
-        // Logging::info("id: {}, {}", shell.m_index, val);
-
+        direct_force.emplace_back(System::fit_log_to_plot(val));
+        // direct_force.emplace_back(val);
         idx.emplace_back(shell.m_lower_inc);
+
+        // Logging::info("id: {}, {}", shell.m_lower_inc, val);
+        // Logging::info(" {} particles in shell {}", shell.m_particles.size(), shell.m_index);
     }
 
     mglData x = idx;
@@ -219,7 +233,6 @@ auto plot_forces_step_2() {
     mglGraph gr(0, 3000, 2000);
 
     gr.SetRange('x', x);
-    // gr.SetRange('y', aforce);
     gr.SetRange('y', y_min, y_max);
 
     gr.SetFontSize(2);
@@ -236,8 +249,8 @@ auto plot_forces_step_2() {
     gr.AddLegend("Numeric", "r.");
 
     gr.Legend();
+    gr.WriteJPEG("forces.jpg");
     gr.WritePNG("forces.png");
-    gr.WritePNG("forces.jpg");
 }
 
 auto main(const int argc, const char *const argv[]) -> int {

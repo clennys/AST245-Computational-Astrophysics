@@ -24,9 +24,17 @@ System::System(const std::string_view &path_name) {
     m_particles = particles_opt.value();
 }
 
-// TODO: (aver) Empty constructor needed for later global initialization
+// WARN: (aver) Empty constructor needed for empty global initialization
 System::System() {}
 System::~System() {}
+
+auto System::convert_lin_to_log(const int no_bins, const double val) const -> double {
+    return m_min_rad * std::pow(m_max_rad / m_min_rad, val / no_bins);
+}
+
+auto System::fit_log_to_plot(const double val) -> double {
+    return val + std::numeric_limits<double>::epsilon();
+}
 
 auto System::precalc_consts() -> void {
     for (const auto &part : m_particles) {
@@ -37,6 +45,24 @@ auto System::precalc_consts() -> void {
     // WARN: (aver) We need min rad to be larger than 0, otherwise many following calculations have
     // a divide by 0!
     assert(m_min_rad > 0.);
+}
+
+auto System::precalc_mean_inter_part_dist() -> double {
+    auto mean_dist = 0.;
+
+#pragma omp parallel for reduction(+ : mean_dist)
+    for (uint i = 0; i < m_particles.size(); ++i) {
+        for (uint j = 0; j < m_particles.size(); ++j) {
+            if (i == j)
+                continue;
+            mean_dist += std::abs(m_particles[i].m_distance - m_particles[j].m_distance);
+        }
+    }
+
+    // 64bit needed to hold the value, which is larger than 2^32
+    mean_dist *= 2. / static_cast<int64_t>(m_particles.size() * (m_particles.size() - 1));
+    Logging::info("Mean inter particle distance: {}", mean_dist);
+    return mean_dist;
 }
 
 auto System::transform_vectors()
@@ -133,26 +159,45 @@ auto System::density_hernquist(const double rad) const -> double {
            (2 * std::numbers::pi * rad * std::pow(rad + m_scale_length, 3));
 }
 auto System::newton_force(const double rad) const -> double {
-    return -m_total_mass * Particle3D::km_non_dim_mass / (std::pow(rad + m_scale_length, 2));
+    // applying Newtons second theoreom on spherical systems and the M(r) function of the Hernquist
+    // paper, we get this calculation, while rad^2 can be reduced
+
+    auto M_r = m_total_mass * (rad * rad) / ((rad + m_scale_length) * (rad + m_scale_length));
+    return -M_r / (rad * rad);
+
+    // return -m_total_mass * Particle3D::km_non_dim_mass /
+    //        ((rad + m_scale_length) * (rad + m_scale_length));
 }
 
 auto System::calc_direct_force() -> void {
+#if 1
 #pragma omp parallel for
-    for (uint i = 0; i < m_particles.size(); i++) {
-        Eigen::Vector3d sum_force_inter_part({0, 0, 0});
-        for (uint j = 0; j < m_particles.size(); j++) {
-            if (i != j) {
-                sum_force_inter_part += m_particles[i].calc_direct_force_with_part(m_particles[j]);
-            }
+    for (uint i = 0; i < m_particles.size(); ++i) {
+        auto sum_force_inter_part = Eigen::Vector3d({0, 0, 0});
+
+        for (uint j = 0; j < m_particles.size(); ++j) {
+            if (i == j)
+                continue;
+
+            auto val = m_particles[i].calc_direct_force_with_part(m_particles[j]);
+            // sum_force_inter_part +=
+            // m_particles[i].calc_direct_force_with_part(m_particles[j]);
+            sum_force_inter_part += val;
         }
 #pragma omp critical
         m_particles[i].update_direct_force(sum_force_inter_part);
     }
-}
-auto System::convert_lin_to_log(const int no_bins, const double val) const -> double {
-    return m_min_rad * std::pow(m_max_rad / m_min_rad, val / no_bins);
-}
-
-auto System::fit_log_to_plot(const double val) -> double {
-    return val + std::numeric_limits<double>::epsilon();
+#else
+    // #pragma omp parallel for
+    for (uint i = 0; i < m_particles.size(); ++i) {
+        for (uint j = i + 1; j < m_particles.size(); ++j) {
+            // #pragma omp critical
+            {
+                const auto force_vec = m_particles[i].calc_direct_force_with_part(m_particles[j]);
+                m_particles[i].m_direct_force -= force_vec;
+                m_particles[j].m_direct_force += force_vec;
+            }
+        }
+    }
+#endif
 }
