@@ -30,12 +30,12 @@ auto init_system(const std::string_view &path) {
     g_system.update_scale_length();
     // g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
     // Particle3D::s_softening = g_system.m_softening;
-    Particle3D::s_softening = System::km_mean_inter_dist / 100'000;
+    System::s_softening = System::k_mean_inter_dist / 100'000;
 
     Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
     Logging::info("Scaling length of system:   {:>12.10f}", g_system.m_scale_length);
-    Logging::info("Softening of system:        {:>12.10f}", Particle3D::s_softening);
+    Logging::info("Softening of system:        {:>12.10f}", System::s_softening);
 }
 
 auto plot_rho_step_1() {
@@ -75,7 +75,7 @@ auto plot_rho_step_1() {
         std::cerr << hern_rho << std::endl;
 
         // NOTE: (aver) \lambda = number of shells on average throughout all bins
-        const auto rho_err = std_dev * Particle3D::km_non_dim_mass / k_shell_volume;
+        const auto rho_err = std_dev * System::k_non_dim_mass / k_shell_volume;
 
         // const auto k_no_parts_in_shell = shell.m_mass / Particle3D::km_non_dim_mass;
         // // NOTE: (aver) \lambda = number of shells in current bin

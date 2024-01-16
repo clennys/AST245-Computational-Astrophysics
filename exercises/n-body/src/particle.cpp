@@ -1,7 +1,6 @@
 #include "particle.hpp"
 #include "logging.hpp"
-
-double Particle3D::s_softening = 0.;
+#include "system.hpp"
 
 auto Particle3D::calc_origin_dist() -> double { return this->m_position.norm(); }
 
@@ -29,9 +28,9 @@ auto Particle3D::calc_direct_force_with_part(const Particle3D &other_part) -> Ei
 
     // add softening to (^r_ij)^2
     const auto dist_norm =
-        std::sqrt(diff_part.squaredNorm() + (Particle3D::s_softening * Particle3D::s_softening));
+        std::sqrt(diff_part.squaredNorm() + (System::s_softening * System::s_softening));
 
-    const auto force_magn = other_part.km_non_dim_mass / (dist_norm * dist_norm * dist_norm);
+    const auto force_magn = System::k_non_dim_mass / (dist_norm * dist_norm * dist_norm);
 
     // assumption: G=1
     return -force_magn * diff_part;

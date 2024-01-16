@@ -15,6 +15,8 @@
 #include <ranges>
 #include <tuple>
 
+double System::s_softening = 0.;
+
 System::System(const std::string_view &path_name) {
     auto particles_opt = Data::read_data(path_name);
     if (not particles_opt.has_value()) {
@@ -40,7 +42,7 @@ auto System::precalc_consts() -> void {
     for (const auto &part : m_particles) {
         update_min_rad(part.m_distance);
         update_max_rad(part.m_distance);
-        m_total_mass += Particle3D::km_non_dim_mass;
+        m_total_mass += System::k_non_dim_mass;
     }
     // WARN: (aver) We need min rad to be larger than 0, otherwise many following calculations have
     // a divide by 0!
@@ -111,7 +113,7 @@ auto System::calc_total_mass() const -> double {
     auto total_mass = std::accumulate(
         m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
             // return sum + part.mass;
-            return sum + Particle3D::km_non_dim_mass;
+            return sum + System::k_non_dim_mass;
         });
     Logging::info("Total mass of system: {}", m_total_mass);
 
@@ -148,7 +150,7 @@ auto System::get_constrained_shell_mass(const double lower_rad, const double upp
         m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
             if (part.m_distance >= lower_rad and part.m_distance <= upper_rad) {
                 // return sum + part.mass;
-                return sum + Particle3D::km_non_dim_mass;
+                return sum + System::k_non_dim_mass;
             }
             return sum + 0.;
         });

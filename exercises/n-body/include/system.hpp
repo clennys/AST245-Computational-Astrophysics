@@ -8,8 +8,19 @@
 
 class System {
   public:
-    static constexpr double km_mean_inter_dist = 3.6078845976382845;
+    //=============================================================================================
+    // Static variables and constants
+    //=============================================================================================
+    static constexpr double k_mean_inter_dist = 3.6078845976382845;
+    /// Non dimensional mass of one
+    static constexpr double k_non_dim_mass = 1.;
+    // static constexpr double km_non_dim_mass = 92.4259;
+    /// Softening to be applied in Force calculcation
+    static double s_softening;
 
+    //=============================================================================================
+    // Regular member variables
+    //=============================================================================================
     PartVec m_particles;
     double m_total_mass = 0.;
     double m_half_mass_rad = 0.;

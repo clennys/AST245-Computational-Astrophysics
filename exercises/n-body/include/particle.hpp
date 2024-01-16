@@ -5,10 +5,9 @@
 
 class Particle3D {
   public:
-    static constexpr double km_non_dim_mass = 1.;
-    // static constexpr double km_non_dim_mass = 92.4259;
-    static double s_softening;
-
+    //=============================================================================================
+    // Regular member variables
+    //=============================================================================================
     Eigen::Vector3d m_position;
     Eigen::Vector3d m_velocity;
     Eigen::Vector3d m_direct_force;
