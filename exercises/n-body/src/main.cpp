@@ -1,12 +1,16 @@
 #include "histogram.hpp"
 #include "logging.hpp"
+#include "node.hpp"
+#include "octree.hpp"
 #include "particle.hpp"
 #include "system.hpp"
+
+#include "Eigen/Eigen"
+#include "mgl2/mgl.h"
 
 #include <cassert>
 #include <cmath>
 #include <format>
-#include <mgl2/mgl.h>
 #include <numeric>
 #include <string_view>
 
@@ -250,6 +254,15 @@ auto plot_do_steps() {
     gr.WriteJPEG("plots/density2.jpg");
 }
 
+auto tree_code() -> void {
+    BoundingCube root_cube(2, 2, 2);
+    Eigen::Vector3d vec = {0, 0, 1};
+    root_cube.setValues({{{vec, vec}, {vec, vec}}, {{vec, vec}, {vec, vec}}});
+    PartVec part;
+    std::cerr << "DEBUGPRINT[1]: main.cpp:200 (after PartVec part;)" << std::endl;
+    Node root = Node(nullptr, part, root_cube);
+}
+
 auto main(const int argc, const char *const argv[]) -> int {
     if (argc != 2) {
         Logging::err("Please supply a single file argument!");
@@ -269,6 +282,9 @@ auto main(const int argc, const char *const argv[]) -> int {
     // task 2
     plot_do_steps();
     // TODO: (aver)
+
+    // task 2
+    tree_code();
 
     Logging::info("Successfully quit!");
     return 0;
