@@ -25,6 +25,9 @@ class Shell {
     Shell &operator=(const Shell &) = default;
     ~Shell();
 
+    /// Return the count of particles in the shell
+    auto shell_int_size() const -> int;
+
   private:
 };
 

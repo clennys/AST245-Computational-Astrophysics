@@ -30,6 +30,8 @@ System::System(const std::string_view &path_name) {
 System::System() {}
 System::~System() {}
 
+auto System::system_int_size() const -> int { return static_cast<int>(m_particles.size()); }
+
 auto System::convert_lin_to_log(const int no_bins, const double val) const -> double {
     return m_min_rad * std::pow(m_max_rad / m_min_rad, val / no_bins);
 }
@@ -53,7 +55,7 @@ auto System::precalc_mean_inter_part_dist() -> double {
     auto mean_dist = 0.;
 
 #pragma omp parallel for reduction(+ : mean_dist)
-    for (uint i = 0; i < m_particles.size(); ++i) {
+    for (uint64_t i = 0; i < m_particles.size(); ++i) {
         for (uint j = 0; j < m_particles.size(); ++j) {
             if (i == j)
                 continue;
@@ -62,7 +64,8 @@ auto System::precalc_mean_inter_part_dist() -> double {
     }
 
     // 64bit needed to hold the value, which is larger than 2^32
-    mean_dist *= 2. / static_cast<int64_t>(m_particles.size() * (m_particles.size() - 1));
+    // WARN: (aver) casting to double results in an illegal instruction, so bear with this
+    mean_dist *= 2. / static_cast<int64_t>(system_int_size() * (system_int_size() - 1));
     Logging::info("Mean inter particle distance: {}", mean_dist);
     return mean_dist;
 }
@@ -113,6 +116,8 @@ auto System::calc_total_mass() const -> double {
     auto total_mass = std::accumulate(
         m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
             // return sum + part.mass;
+
+            (void)part;
             return sum + System::k_non_dim_mass;
         });
     Logging::info("Total mass of system: {}", m_total_mass);
@@ -174,10 +179,10 @@ auto System::newton_force(const double rad) const -> double {
 auto System::calc_direct_force() -> void {
 #if 1
 #pragma omp parallel for
-    for (uint i = 0; i < m_particles.size(); ++i) {
+    for (uint64_t i = 0; i < m_particles.size(); ++i) {
         auto sum_force_inter_part = Eigen::Vector3d({0, 0, 0});
 
-        for (uint j = 0; j < m_particles.size(); ++j) {
+        for (uint64_t j = 0; j < m_particles.size(); ++j) {
             if (i == j)
                 continue;
 

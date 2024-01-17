@@ -6,15 +6,12 @@
 #include "types.hpp"
 
 #include <algorithm>
-#include <cstdlib>
-#include <execution>
 #include <format>
-#include <mutex>
 
 Histogram::Histogram(const int no_bins, const double radius, System &p_system, bool do_log) {
 
     // WARN: (aver) Addded one to radious to securely place all particles into shells later on
-    auto bin_radius = (radius + 1) / static_cast<int>(no_bins);
+    auto bin_radius = (radius + 1) / no_bins;
     double lower_rad;
     double upper_rad;
 
@@ -28,7 +25,7 @@ Histogram::Histogram(const int no_bins, const double radius, System &p_system, b
             upper_rad = (i + 1) * bin_radius;
         }
 
-        m_shells.emplace_back(Shell(i, lower_rad, upper_rad));
+        m_shells.emplace_back(Shell(static_cast<uint>(i), lower_rad, upper_rad));
     }
 
     Logging::info("Sorting Particles into shells...");

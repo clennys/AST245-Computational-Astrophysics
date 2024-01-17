@@ -11,7 +11,7 @@
 #include <string_view>
 
 /// Particles read in and used in the tasks.
-/// Global because the MathGL functions are not allowed to take parameters
+/// File Global because the MathGL functions are not allowed to take parameters
 ///
 static System g_system;
 
@@ -25,9 +25,9 @@ auto init_system(const std::string_view &path) {
     // use this shell to calculcate half_mass_radius, and scale_length
     Histogram hist(100'000, furthest_particle.m_distance, g_system);
 
-    // g_system.update_half_mass(hist.m_shells);
     g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
+
     // g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
     // Particle3D::s_softening = g_system.m_softening;
     System::s_softening = System::k_mean_inter_dist / 100'000;
@@ -47,7 +47,7 @@ auto plot_rho_step_1() {
     // precalculated (by the compiler!) constant for shell volume
     constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
     constexpr auto no_bins = 50;
-    const auto avg_parts = static_cast<int>(g_system.m_particles.size()) / no_bins;
+    const auto avg_parts = g_system.system_int_size() / no_bins;
     const auto std_dev = std::sqrt(avg_parts);
 
     // set minimal radius to something else than 0, otherwise errors ensue
@@ -213,7 +213,7 @@ auto plot_forces_step_2() {
                                            part.m_position.dot(part.m_direct_force) / norm;
                                        return sum + projection;
                                    });
-        val = shell.m_particles.size() == 0 ? 0. : val / shell.m_particles.size();
+        val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
 
         direct_force.emplace_back(System::fit_log_to_plot(val));
         // direct_force.emplace_back(val);

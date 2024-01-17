@@ -38,7 +38,16 @@ class System {
     System &operator=(const System &) = default;
     ~System();
 
-    auto precalc_mean_inter_part_dist() -> double;
+    /// Return the count of particles in the whole system cast as an `int` for correct calculations
+    /// with it
+    auto system_int_size() const -> int;
+
+    /// Calculate the Mean inter-particle distance
+    ///
+    /// NOTE: Recommended to be run once, as O(N^2)
+    [[nodiscard]] auto precalc_mean_inter_part_dist() -> double;
+
+    /// Calculate runtime constants for system deployment
     auto precalc_consts() -> void;
 
     auto transform_vectors()
