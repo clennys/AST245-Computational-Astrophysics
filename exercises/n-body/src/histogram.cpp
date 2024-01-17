@@ -8,10 +8,11 @@
 #include <algorithm>
 #include <format>
 
-Histogram::Histogram(const int no_bins, const double radius, System &p_system, bool do_log) {
+Histogram::Histogram(const int no_bins, System &p_system, bool do_log) {
 
     // WARN: (aver) Addded one to radious to securely place all particles into shells later on
-    auto bin_radius = (radius + 1) / no_bins;
+    const auto bin_radius = (p_system.m_max_rad + 1) / no_bins;
+
     double lower_rad;
     double upper_rad;
 
@@ -27,8 +28,6 @@ Histogram::Histogram(const int no_bins, const double radius, System &p_system, b
 
         m_shells.emplace_back(Shell(static_cast<uint>(i), lower_rad, upper_rad));
     }
-
-    Logging::info("Sorting Particles into shells...");
 
     for (const auto &part : p_system.m_particles) {
         auto shell_it = std::find_if(m_shells.begin(), m_shells.end(), [&part](const Shell &shell) {
@@ -51,8 +50,6 @@ Histogram::Histogram(const int no_bins, const double radius, System &p_system, b
             // std::exit(-1);
         }
     }
-
-    Logging::info("...Particles emplaced into {} Shells!", no_bins);
 }
 
 Histogram::~Histogram() {}

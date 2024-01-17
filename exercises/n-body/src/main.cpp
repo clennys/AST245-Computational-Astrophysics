@@ -17,25 +17,25 @@ static System g_system;
 
 // TODO: (aver) consider making this a factory like static function on the `System` class
 auto init_system(const std::string_view &path) {
+    Logging::info("Initializing System with file: {}", path);
     g_system = System(path);
     g_system.precalc_consts();
 
-    auto furthest_particle = g_system.get_max_distance();
 
     // use this shell to calculcate half_mass_radius, and scale_length
-    Histogram hist(100'000, furthest_particle.m_distance, g_system);
+    Histogram hist(100'000, g_system);
 
     g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
 
-    // g_system.m_softening = g_system.m_max_rad / std::pow(g_system.m_total_mass, 1. / 3.);
-    // Particle3D::s_softening = g_system.m_softening;
-    System::s_softening = System::k_mean_inter_dist / 100'000;
+    System::s_softening = System::k_mean_inter_dist / 1000000;
 
     Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
     Logging::info("Scaling length of system:   {:>12.10f}", g_system.m_scale_length);
+    Logging::info("Avg Inter-particle dist:    {:>12.10f}", System::k_mean_inter_dist);
     Logging::info("Softening of system:        {:>12.10f}", System::s_softening);
+    Logging::info("");
 }
 
 auto plot_rho_step_1() {
@@ -54,8 +54,7 @@ auto plot_rho_step_1() {
 
     auto sum = 0.;
 #if 1
-    auto furthest_particle = g_system.get_max_distance();
-    Histogram hist(no_bins, furthest_particle.m_distance, g_system, true);
+    Histogram hist(no_bins, g_system, true);
     for (const auto &shell : hist.m_shells) {
         // FIXME: (aver) fix plotting of hernquist
 
@@ -194,12 +193,11 @@ auto plot_forces_step_2() {
         analytic_force.emplace_back(System::fit_log_to_plot(val));
     }
 
-    auto furthest_particle = g_system.get_max_distance();
     Logging::info("Calculating direct forces...");
     g_system.calc_direct_force();
 
     Logging::info("Creating Histogram with {} shells...", no_bins);
-    auto dir_force_hist = Histogram(no_bins, furthest_particle.m_distance, g_system, true);
+    auto dir_force_hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : dir_force_hist.m_shells) {
 

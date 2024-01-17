@@ -10,7 +10,6 @@ class Histogram {
     ShellVec m_shells;
 
     explicit Histogram(const int no_bins,
-                       const double radius,
                        System &p_system,
                        bool do_log = false);
     Histogram(Histogram &&) = default;
