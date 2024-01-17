@@ -15,6 +15,7 @@
 #include <ranges>
 #include <tuple>
 
+// set default softening
 double System::s_softening = 0.;
 
 System::System(const std::string_view &path_name) {
@@ -25,10 +26,6 @@ System::System(const std::string_view &path_name) {
     };
     m_particles = particles_opt.value();
 }
-
-// WARN: (aver) Empty constructor needed for empty global initialization
-System::System() {}
-System::~System() {}
 
 auto System::system_int_size() const -> int { return static_cast<int>(m_particles.size()); }
 
@@ -56,17 +53,18 @@ auto System::precalc_mean_inter_part_dist() -> double {
 
 #pragma omp parallel for reduction(+ : mean_dist)
     for (uint64_t i = 0; i < m_particles.size(); ++i) {
-        for (uint j = 0; j < m_particles.size(); ++j) {
+#pragma omp parallel for reduction(+ : mean_dist)
+        for (uint64_t j = 0; j < m_particles.size(); ++j) {
             if (i == j)
                 continue;
-            mean_dist += std::abs(m_particles[i].m_distance - m_particles[j].m_distance);
+            mean_dist += (m_particles[i].m_position - m_particles[j].m_position).norm();
         }
     }
-
-    // 64bit needed to hold the value, which is larger than 2^32
     // WARN: (aver) casting to double results in an illegal instruction, so bear with this
-    mean_dist *= 2. / static_cast<int64_t>(system_int_size() * (system_int_size() - 1));
-    Logging::info("Mean inter particle distance: {}", mean_dist);
+    // 64bit needed to hold the value, which is larger than 2^32
+    // mean_dist /= static_cast<int64_t>(m_particles.size() * (m_particles.size() - 1));
+    mean_dist *= 2. / static_cast<int64_t>(m_particles.size() * (m_particles.size() - 1));
+
     return mean_dist;
 }
 
@@ -169,17 +167,18 @@ auto System::newton_force(const double rad) const -> double {
     // applying Newtons second theoreom on spherical systems and the M(r) function of the Hernquist
     // paper, we get this calculation, while rad^2 can be reduced
 
-    auto M_r = m_total_mass * (rad * rad) / ((rad + m_scale_length) * (rad + m_scale_length));
-    return -M_r / (rad * rad);
+    // auto M_r = m_total_mass * (rad * rad) / ((rad + m_scale_length) * (rad + m_scale_length));
+    // return -M_r / (rad * rad);
 
-    // return -m_total_mass * Particle3D::km_non_dim_mass /
-    //        ((rad + m_scale_length) * (rad + m_scale_length));
+    return -m_total_mass * System::k_non_dim_mass /
+           ((rad + m_scale_length) * (rad + m_scale_length));
 }
 
 auto System::calc_direct_force() -> void {
 #if 1
 #pragma omp parallel for
     for (uint64_t i = 0; i < m_particles.size(); ++i) {
+        // reset on each `i` change
         auto sum_force_inter_part = Eigen::Vector3d({0, 0, 0});
 
         for (uint64_t j = 0; j < m_particles.size(); ++j) {
@@ -187,23 +186,18 @@ auto System::calc_direct_force() -> void {
                 continue;
 
             auto val = m_particles[i].calc_direct_force_with_part(m_particles[j]);
-            // sum_force_inter_part +=
-            // m_particles[i].calc_direct_force_with_part(m_particles[j]);
             sum_force_inter_part += val;
         }
 #pragma omp critical
         m_particles[i].update_direct_force(sum_force_inter_part);
     }
 #else
-    // #pragma omp parallel for
+    // No perf gain in parallelizing this ...
     for (uint i = 0; i < m_particles.size(); ++i) {
         for (uint j = i + 1; j < m_particles.size(); ++j) {
-            // #pragma omp critical
-            {
-                const auto force_vec = m_particles[i].calc_direct_force_with_part(m_particles[j]);
-                m_particles[i].m_direct_force -= force_vec;
-                m_particles[j].m_direct_force += force_vec;
-            }
+            const auto force_vec = m_particles[i].calc_direct_force_with_part(m_particles[j]);
+            m_particles[i].m_direct_force += force_vec;
+            m_particles[j].m_direct_force -= force_vec;
         }
     }
 #endif

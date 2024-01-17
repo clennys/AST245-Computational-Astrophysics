@@ -21,14 +21,17 @@ auto init_system(const std::string_view &path) {
     g_system = System(path);
     g_system.precalc_consts();
 
-
     // use this shell to calculcate half_mass_radius, and scale_length
     Histogram hist(100'000, g_system);
 
     g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
 
-    System::s_softening = System::k_mean_inter_dist / 1000000;
+    // System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
+    //                                       g_system.m_scale_length * g_system.m_scale_length));
+    System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
+                                          System::k_mean_inter_dist * System::k_mean_inter_dist));
+    System::s_softening /= 200;
 
     Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
@@ -179,6 +182,7 @@ auto plot_forces_step_2() {
 // This should be a one time calculation and then save it in the System class
 #if 0
     auto mean_inter_idst = g_system.precalc_mean_inter_part_dist();
+    Logging::info("Mean inter particle distance: {}", mean_inter_idst);
 #endif
 
     std::vector<double> analytic_force;

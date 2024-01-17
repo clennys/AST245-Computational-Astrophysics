@@ -11,8 +11,8 @@ class System {
     //=============================================================================================
     // Static variables and constants
     //=============================================================================================
-    static constexpr double k_mean_inter_dist = 3.6078845976382845;
-    /// Non dimensional mass of one
+    static constexpr double k_mean_inter_dist = 4.023775510528517;
+    /// Non dimensional particle mass of one
     static constexpr double k_non_dim_mass = 1.;
     // static constexpr double km_non_dim_mass = 92.4259;
     /// Softening to be applied in Force calculcation
@@ -31,12 +31,12 @@ class System {
 
     explicit System(const std::string_view &path_name);
 
-    System();
+    System() = default;
     System(System &&) = default;
     System(const System &) = default;
     System &operator=(System &&) = default;
     System &operator=(const System &) = default;
-    ~System();
+    ~System() = default;
 
     /// Return the count of particles in the whole system cast as an `int` for correct calculations
     /// with it
