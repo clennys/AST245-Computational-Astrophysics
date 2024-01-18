@@ -2,6 +2,7 @@
 #define OCTREE_H_
 
 #include "node.hpp"
+#include <mgl2/mgl.h>
 
 class Octree {
 	public:
@@ -16,6 +17,9 @@ class Octree {
 		auto recursive_build_tree(Node *root) -> void;
 		auto tree_walk() -> void;
 		auto recursive_tree_walk(Node *root) -> void;
+		auto plot(mglGraph &gr) -> void;
+		auto plot_recursive(mglGraph &gr, const Node *node) -> void;
+		auto plot_cube(mglGraph &gr, const Node *node) -> void;
 
 };
 

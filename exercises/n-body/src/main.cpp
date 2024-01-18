@@ -254,52 +254,6 @@ auto plot_do_steps() {
     gr.WriteJPEG("plots/density2.jpg");
 }
 
-auto drawCube(mglGraph &gr, const Node *node) -> void {
-    // Ensure there are exactly 8 corners
-    // Draw lines between the vertices to form the cube
-    BoundingCube cube = node->m_bounding_cube;
-    // draw bottom face
-    std::cerr << "DEBUGPRINT[1]: main.cpp:199: cube=" << cube(0, 0, 0) << std::endl;
-
-    gr.Line(mglPoint(cube(0, 0, 0).x(), cube(0, 0, 0).y(), cube(0, 0, 0).z()),
-            mglPoint(cube(1, 0, 0).x(), cube(1, 0, 0).y(), cube(1, 0, 0).z()));
-
-    gr.Line(mglPoint(cube(1, 0, 0).x(), cube(1, 0, 0).y(), cube(1, 0, 0).z()),
-            mglPoint(cube(1, 0, 1).x(), cube(1, 0, 1).y(), cube(1, 0, 1).z()));
-
-    gr.Line(mglPoint(cube(1, 0, 1).x(), cube(1, 0, 1).y(), cube(1, 0, 1).z()),
-            mglPoint(cube(0, 0, 1).x(), cube(0, 0, 1).y(), cube(0, 0, 1).z()));
-
-    gr.Line(mglPoint(cube(0, 0, 1).x(), cube(0, 0, 1).y(), cube(0, 0, 1).z()),
-            mglPoint(cube(0, 0, 0).x(), cube(0, 0, 0).y(), cube(0, 0, 0).z()));
-
-    // draw top face
-    gr.Line(mglPoint(cube(0, 1, 0).x(), cube(0, 1, 0).y(), cube(0, 1, 0).z()),
-            mglPoint(cube(1, 1, 0).x(), cube(1, 1, 0).y(), cube(1, 1, 0).z()));
-
-    gr.Line(mglPoint(cube(1, 1, 0).x(), cube(1, 1, 0).y(), cube(1, 1, 0).z()),
-            mglPoint(cube(1, 1, 1).x(), cube(1, 1, 1).y(), cube(1, 1, 1).z()));
-
-    gr.Line(mglPoint(cube(1, 1, 1).x(), cube(1, 1, 1).y(), cube(1, 1, 1).z()),
-            mglPoint(cube(0, 1, 1).x(), cube(0, 1, 1).y(), cube(0, 1, 1).z()));
-
-    gr.Line(mglPoint(cube(0, 1, 1).x(), cube(0, 1, 1).y(), cube(0, 1, 1).z()),
-            mglPoint(cube(0, 1, 0).x(), cube(0, 1, 0).y(), cube(0, 1, 0).z()));
-
-    // draw vertical edges
-    gr.Line(mglPoint(cube(0, 0, 0).x(), cube(0, 0, 0).y(), cube(0, 0, 0).z()),
-            mglPoint(cube(0, 1, 0).x(), cube(0, 1, 0).y(), cube(0, 1, 0).z()));
-
-    gr.Line(mglPoint(cube(1, 0, 0).x(), cube(1, 0, 0).y(), cube(1, 0, 0).z()),
-            mglPoint(cube(1, 1, 0).x(), cube(1, 1, 0).y(), cube(1, 1, 0).z()));
-
-    gr.Line(mglPoint(cube(1, 0, 1).x(), cube(1, 0, 1).y(), cube(1, 0, 1).z()),
-            mglPoint(cube(1, 1, 1).x(), cube(1, 1, 1).y(), cube(1, 1, 1).z()));
-
-    gr.Line(mglPoint(cube(0, 0, 1).x(), cube(0, 0, 1).y(), cube(0, 0, 1).z()),
-            mglPoint(cube(0, 1, 1).x(), cube(0, 1, 1).y(), cube(0, 1, 1).z()));
-}
-
 auto tree_code() -> void {
     mglGraph gr;
     // set plot parameters
@@ -309,15 +263,15 @@ auto tree_code() -> void {
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
     Octree tree = Octree(root_cube, g_system.m_particles);
     tree.build();
-    drawCube(gr, tree.m_root_node);
-    // double padding = tree.m_root_node->m_bounding_cube(0, 0, 0).x() + 100.;
-
     gr.SetRanges(-800, 800, -800, 800, -800, 800);
-
     gr.Axis();
-    // gr.WritePNG("cube.png");
+    tree.plot(gr);
+    auto transform = g_system.transform_vectors();
+    mglData x = std::get<0>(transform);
+    mglData y = std::get<1>(transform);
+    mglData z = std::get<2>(transform);
+    gr.Dots(x, y, z, "r");
     gr.WriteFrame("octree.png");
-
     // tree.tree_walk();
 }
 
