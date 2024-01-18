@@ -255,6 +255,61 @@ auto plot_forces_step_2() {
     gr.WritePNG("forces.png");
 }
 
+auto plot_do_steps() {
+    constexpr auto kTime = 10.;
+    constexpr auto kDeltaTime = 0.001;
+    // constexpr auto kFinalTime = kTime / kDeltaTime;
+
+    for (double i = 0; i < kTime; i += kDeltaTime) {
+        Logging::info("i = {}", i);
+        g_system.solver_do_step(kDeltaTime);
+    }
+
+    std::vector<double> direct_force;
+    std::vector<double> idx;
+
+    constexpr auto no_bins = 50;
+    Logging::info("Creating Histogram with {} shells...", no_bins);
+    auto dir_force_hist = Histogram(no_bins, g_system, true);
+
+    for (const auto &shell : dir_force_hist.m_shells) {
+        auto val = std::accumulate(shell.m_particles.begin(),
+                                   shell.m_particles.end(),
+                                   0.,
+                                   [](double sum, const Particle3D &part) {
+                                       auto norm = part.m_position.norm();
+                                       auto projection =
+                                           part.m_position.dot(part.m_direct_force) / norm;
+                                       return sum + projection;
+                                   });
+        val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+        direct_force.emplace_back(System::fit_log_to_plot(val));
+        idx.emplace_back(shell.m_lower_inc);
+    }
+
+    mglData x = idx;
+    mglData nforce = direct_force;
+
+    mglGraph gr(0, 3000, 2000);
+
+    gr.SetRange('x', x);
+    gr.SetRange('y', nforce);
+
+    gr.SetFontSize(2);
+    gr.SetCoor(mglLogX);
+    gr.Axis();
+
+    gr.Label('x', "Radius [l]", 0);
+    gr.Label('y', "Force", 0);
+
+    gr.Plot(x, nforce, "r.");
+    gr.AddLegend("Numeric", "r.");
+
+    gr.Legend();
+    gr.WriteJPEG("forces2.jpg");
+    // gr.WritePNG("forces2.png");
+}
+
 auto main(const int argc, const char *const argv[]) -> int {
     if (argc != 2) {
         Logging::err("Please supply a single file argument!");

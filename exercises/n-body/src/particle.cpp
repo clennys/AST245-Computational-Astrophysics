@@ -20,7 +20,8 @@ auto Particle3D::update_direct_force(const Eigen::Vector3d force) -> void {
     this->m_direct_force = force;
 }
 
-auto Particle3D::calc_direct_force_with_part(const Particle3D &other_part) -> Eigen::Vector3d {
+auto Particle3D::calc_direct_force_with_part(const Particle3D &other_part) const
+    -> Eigen::Vector3d {
     // (dhub) Source:
     // https://www.physicsforums.com/threads/solving-n-body-simulation-problems-with-gravitational-equations.455058/
 

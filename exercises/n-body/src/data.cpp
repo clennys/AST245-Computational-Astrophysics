@@ -30,6 +30,7 @@ auto Data::read_data(const std::filesystem::path &path_name)
         while (ss >> word) {
             if (i == 0) {
                 // we formally skip the array number
+                part.m_id = std::stoul(word);
             } else if (i == 1) {
                 part.m_mass = std::stod(word);
             } else if (i == 2) {

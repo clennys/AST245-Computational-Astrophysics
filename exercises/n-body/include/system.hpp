@@ -88,8 +88,12 @@ class System {
 
     /// Helper method to adjust a radius to a bin size
     auto convert_lin_to_log(const int no_bins, const double val) const -> double;
+
     /// Helper method to add a minimal epsilon to values to circumvent log(0) errors
     static auto fit_log_to_plot(const double val) -> double;
+
+    /// Do one step forward in the system
+    auto solver_do_step(const double delta_time) -> void;
 
   private:
 };

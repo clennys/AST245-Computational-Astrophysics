@@ -202,3 +202,51 @@ auto System::calc_direct_force() -> void {
     }
 #endif
 }
+
+auto System::solver_do_step(const double delta_time) -> void {
+    // Logging::info("Stepping forward with dt: {}", delta_time);
+
+#pragma omp parallel for
+    for (auto &part : m_particles) {
+        const auto velocity_mid =
+            part.m_velocity + (part.m_direct_force / System::k_non_dim_mass) * delta_time / 2;
+
+        part.m_position += velocity_mid * delta_time;
+        auto force_new = Eigen::Vector3d({0, 0, 0});
+        // update forces at new position
+
+#if 1
+#pragma omp parallel private(part)
+        {
+            auto local_force = Eigen::Vector3d({0, 0, 0});
+
+#pragma omp for
+            for (size_t i = 0; i < m_particles.size(); ++i) {
+                auto other_part = m_particles[i];
+                if (other_part.m_id == part.m_id)
+                    continue;
+
+                local_force += part.calc_direct_force_with_part(other_part);
+            }
+#pragma omp critical
+            force_new += local_force;
+        }
+#else
+#pragma omp parallel for private(part)
+        for (size_t i = 0; i < m_particles.size(); i++) {
+            auto other_part = m_particles[i];
+            if (other_part.m_id == part.m_id)
+                continue;
+#pragma omp critical
+            force_new += part.calc_direct_force_with_part(other_part);
+        }
+#endif
+
+        // update the force
+        part.update_direct_force(force_new);
+
+        // set new velocity, completing leap-frog
+        part.m_velocity =
+            velocity_mid + (part.m_direct_force / System::k_non_dim_mass) * delta_time / 2;
+    }
+}

@@ -8,6 +8,7 @@ class Particle3D {
     //=============================================================================================
     // Regular member variables
     //=============================================================================================
+    uint m_id;
     Eigen::Vector3d m_position;
     Eigen::Vector3d m_velocity;
     Eigen::Vector3d m_direct_force;
@@ -26,7 +27,7 @@ class Particle3D {
     auto print_summary() const -> void;
 
     /// Calculate direct force with another particle
-    auto calc_direct_force_with_part(const Particle3D &other_part) -> Eigen::Vector3d;
+    auto calc_direct_force_with_part(const Particle3D &other_part) const -> Eigen::Vector3d;
 
     /// Update direct force on particle
     auto update_direct_force(Eigen::Vector3d force) -> void;
