@@ -2,9 +2,10 @@
 #include "data.hpp"
 #include "histogram.hpp"
 #include "logging.hpp"
+#include "node.hpp"
 #include "particle.hpp"
 
-#include <omp.h>
+#include "omp.h"
 
 #include <algorithm>
 #include <cassert>
@@ -191,6 +192,7 @@ auto System::newton_force(const double rad) const -> double {
            ((rad + m_scale_length) * (rad + m_scale_length));
 }
 
+<<<<<<< HEAD
 auto System::calc_direct_initial_force() -> void {
     Logging::info("Calculating initial direct forces...");
 #if 1
@@ -205,19 +207,29 @@ auto System::calc_direct_initial_force() -> void {
 
             auto val = m_particles[i].calc_direct_force_with_part(m_particles[j]);
             sum_force_inter_part += val;
+=======
+    auto System::calc_direct_force()->void {
+        for (uint i = 0; i < m_particles.size(); i++) {
+            Eigen::Vector3d sum_force_inter_part(0);
+            for (uint j = 0; j < m_particles.size(); j++) {
+                if (i != j) {
+                    sum_force_inter_part +=
+                        m_particles[i].calc_direct_force_with_part(m_particles[j]);
+                }
+>>>>>>> a98fd8a (Finished tree build for tree-code)
         }
 #pragma omp critical
         m_particles[i].update_direct_force(sum_force_inter_part);
     }
 #else
-    // No perf gain in parallelizing this ...
-    for (uint i = 0; i < m_particles.size(); ++i) {
-        for (uint j = i + 1; j < m_particles.size(); ++j) {
-            const auto force_vec = m_particles[i].calc_direct_force_with_part(m_particles[j]);
-            m_particles[i].m_direct_force += force_vec;
-            m_particles[j].m_direct_force -= force_vec;
-        }
+// No perf gain in parallelizing this ...
+for (uint i = 0; i < m_particles.size(); ++i) {
+    for (uint j = i + 1; j < m_particles.size(); ++j) {
+        const auto force_vec = m_particles[i].calc_direct_force_with_part(m_particles[j]);
+        m_particles[i].m_direct_force += force_vec;
+        m_particles[j].m_direct_force -= force_vec;
     }
+}
 #endif
 }
 
@@ -269,6 +281,7 @@ auto System::solver_do_step(const double delta_time) -> void {
     }
 }
 
+<<<<<<< HEAD
 auto System::calc_relaxation() const -> double {
     // NOTE: (dhub) Assume G=1
     double nr_part = this->system_int_size();
@@ -283,3 +296,34 @@ auto System::calc_relaxation() const -> double {
 }
 
 auto System::update_relaxation() -> void { m_relaxation = calc_relaxation(); }
+=======
+auto System::calc_relaxation() -> double {
+    // NOTE: (dhub) Assume G=1
+    double nr_part = m_particles.size();
+    double circular_velocity = std::sqrt(m_total_mass * m_half_mass_rad / m_half_mass_rad);
+    // TODO: (dhub) If not working maybe this alternative will?
+    // double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
+    double time_cross = nr_part / circular_velocity;
+    return nr_part / (8 * std::log(nr_part)) * time_cross;
+}
+
+auto System::update_relaxation() -> void { m_relaxation = calc_relaxation(); }
+
+auto System::calc_overall_bounding_cube() -> BoundingCube {
+    auto max_dist = get_max_distance().m_position.norm();
+    BoundingCube cube(2, 2, 2);
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+                std::cerr << "PREVENTING FROM ILLEGAL HARDWARE ACCESS WITH THIS CERR HOW?????"
+                          << std::endl;
+                double x = i == 1 ? max_dist : -max_dist;
+                double y = j == 1 ? max_dist : -max_dist;
+                double z = k == 1 ? max_dist : -max_dist;
+                cube(i, j, k) = Eigen::Vector3d(x, y, z);
+            }
+        }
+    }
+    return cube;
+}
+>>>>>>> a98fd8a (Finished tree build for tree-code)

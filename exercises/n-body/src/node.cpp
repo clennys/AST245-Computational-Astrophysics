@@ -1,11 +1,12 @@
 #include "node.hpp"
+#include "logging.hpp"
 #include <iostream>
 #include <memory>
 
 Node::Node() {}
 
-Node::Node(Node *par, PartVec part_vec, BoundingCube box)
-    : m_parent(par), m_particles(part_vec), m_bounding_cube(box) {
+Node::Node(Node *par, PartVec part_vec, BoundingCube cube, int depth)
+    : m_parent(par), m_particles(part_vec), m_bounding_cube(cube), m_depth(depth) {
     m_children = SubCubesNodes(2, 2, 2);
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
@@ -46,6 +47,7 @@ auto Node::octa_split_bounding_box() -> SubBoundingCubes {
 
     // NOTE: (dhub) Because we construct cubes all sides have the same length.
     double half_side_length = (m_bounding_cube(1, 0, 0).x() - m_bounding_cube(0, 0, 0).x()) * 0.5;
+    // Logging::dbg("Cube sides s halfed: {}", half_side_length);
 
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
@@ -66,7 +68,7 @@ auto Node::octa_split_bounding_box() -> SubBoundingCubes {
 // NOTE: (dhub) By construction the cubes are always axis aligned
 // Source:
 // https://stackoverflow.com/questions/21037241/how-to-determine-a-point-is-inside-or-outside-a-cube
-auto Node::in_bounding_box(const BoundingCube cube, const Particle3D part) -> bool {
+auto Node::in_bounding_box(const BoundingCube cube, const Particle3D &part) -> bool {
     const auto x = part.m_position.x();
     const auto y = part.m_position.y();
     const auto z = part.m_position.z();
@@ -83,20 +85,50 @@ auto Node::in_bounding_box(const BoundingCube cube, const Particle3D part) -> bo
 
 auto Node::populate_children() -> void {
     SubBoundingCubes new_bounding_cubes = octa_split_bounding_box();
-
     for (const auto &part : m_particles) {
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 2; k++) {
+			// NOTE: Particles only fall in single sub bounding cube, there are some on the boundary
+        bool particle_allocated = false;
+        for (int i = 0; i < 2 && !particle_allocated; i++) {
+            for (int j = 0; j < 2 && !particle_allocated; j++) {
+                for (int k = 0; k < 2 && !particle_allocated; k++) {
+                    // TODO: (dhub) stop triple loop when particle was allocated
                     if (in_bounding_box(new_bounding_cubes(i, j, k), part)) {
-                        if (m_children(i, j, k) != nullptr) {
+                        if (m_children(i, j, k) == nullptr) {
                             PartVec child_part = {part};
-                            m_children(i, j, k) =
-                                new Node(this, child_part, new_bounding_cubes(i, j, k));
+                            m_children(i, j, k) = new Node(
+                                this, child_part, new_bounding_cubes(i, j, k), m_depth + 1);
                         } else {
                             m_children(i, j, k)->m_particles.push_back(part);
                         }
+                        particle_allocated = true;
                     }
+                }
+            }
+        }
+    }
+}
+auto Node::print_cube() -> void {
+
+    Logging::info("Printing summary");
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+                Logging::info("Coord Cube at ({},{},{}) is", i, j, k);
+                std::cout << m_bounding_cube(i, j, k) << std::endl;
+            }
+        }
+    }
+    Logging::info("Summary DONE");
+}
+
+Node::~Node() {
+    Logging::dbg("Destructor of Node called");
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+                if (m_children(i, j, k)) {
+                    Logging::dbg("children deleted");
+                    delete m_children(i, j, k);
                 }
             }
         }

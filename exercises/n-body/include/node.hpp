@@ -17,6 +17,7 @@ class Node {
     // array of children (8)
     SubCubesNodes m_children;
 
+		// particles in node
     PartVec m_particles;
 
     // Bounding box index
@@ -29,15 +30,20 @@ class Node {
     // (0,0,0) +------+' (1,0,0)
     //
     BoundingCube m_bounding_cube;
+
+		int m_depth = -1;
 		Node();
-    explicit Node(Node* par, PartVec part_vec, BoundingCube cube);
+    explicit Node(Node* par, PartVec part_vec, BoundingCube cube, int depth);
 		auto in_bounding_box(Particle3D part) -> bool;
 		auto multipole_expansion() -> void;
 		auto quadrupole() -> void;
 		auto populate_children() -> void;
 		auto octa_split_bounding_box() -> SubBoundingCubes;
 		auto create_sub_bounding_cube(Eigen::Vector3d origin, double cube_side_length) -> BoundingCube;
-		auto in_bounding_box(const BoundingCube cube, const Particle3D part) -> bool;
+		auto in_bounding_box(const BoundingCube cube, const Particle3D &part) -> bool;
+		auto print_cube() -> void;
+		~Node();
+
 };
 
 #endif // ! NODE_H_

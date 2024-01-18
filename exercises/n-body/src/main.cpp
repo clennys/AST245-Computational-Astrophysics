@@ -255,12 +255,9 @@ auto plot_do_steps() {
 }
 
 auto tree_code() -> void {
-    BoundingCube root_cube(2, 2, 2);
-    Eigen::Vector3d vec = {0, 0, 1};
-    root_cube.setValues({{{vec, vec}, {vec, vec}}, {{vec, vec}, {vec, vec}}});
-    PartVec part;
-    std::cerr << "DEBUGPRINT[1]: main.cpp:200 (after PartVec part;)" << std::endl;
-    Node root = Node(nullptr, part, root_cube);
+    BoundingCube root_cube = g_system.calc_overall_bounding_cube();
+    Octree tree = Octree(root_cube, g_system.m_particles);
+    tree.build();
 }
 
 auto main(const int argc, const char *const argv[]) -> int {
