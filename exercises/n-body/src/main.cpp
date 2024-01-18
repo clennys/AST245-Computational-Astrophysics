@@ -47,8 +47,6 @@ auto plot_rho_step_1() {
     std::vector<double> numeric_dens;
     std::vector<double> rho_error;
 
-    // precalculated (by the compiler!) constant for shell volume
-    constexpr auto k_shell_vol_pref = 4. / 3. * std::numbers::pi;
     constexpr auto no_bins = 50;
     const auto avg_parts = g_system.system_int_size() / no_bins;
     const auto std_dev = std::sqrt(avg_parts);
@@ -59,25 +57,11 @@ auto plot_rho_step_1() {
 #if 1
     Histogram hist(no_bins, g_system, true);
     for (const auto &shell : hist.m_shells) {
-        // FIXME: (aver) fix plotting of hernquist
-
-        Logging::info(
-            "bin: {}, lower: {}, upper {}", shell.m_index, shell.m_lower_inc, shell.m_upper);
-        Logging::info("Shell mass: {}", shell.m_mass);
-
-        // TODO: (aver) move this calculation into a method of shell
-        const auto k_shell_volume =
-            k_shell_vol_pref * (std::pow(shell.m_upper, 3) - std::pow(shell.m_lower_inc, 3));
-
-        // TODO: (aver) move this into a method of shell as well
-        const auto k_shell_rho = shell.m_mass / k_shell_volume;
-        std::cerr << k_shell_rho << std::endl;
 
         auto hern_rho = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) / 2);
-        std::cerr << hern_rho << std::endl;
 
         // NOTE: (aver) \lambda = number of shells on average throughout all bins
-        const auto rho_err = std_dev * System::k_non_dim_mass / k_shell_volume;
+        const auto rho_err = std_dev * System::k_non_dim_mass / shell.m_volume;
 
         // const auto k_no_parts_in_shell = shell.m_mass / Particle3D::km_non_dim_mass;
         // // NOTE: (aver) \lambda = number of shells in current bin
@@ -93,7 +77,7 @@ auto plot_rho_step_1() {
         index.emplace_back(shell.m_lower_inc);
 
         hernquist_dens.emplace_back(System::fit_log_to_plot(hern_rho));
-        numeric_dens.emplace_back(System::fit_log_to_plot(k_shell_rho));
+        numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
         rho_error.emplace_back(rho_err);
 
         sum += shell.m_mass;

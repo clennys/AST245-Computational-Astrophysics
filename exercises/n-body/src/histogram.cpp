@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <format>
+#include <omp.h>
 
 Histogram::Histogram(const int no_bins, System &p_system, bool do_log) {
 
@@ -50,6 +51,11 @@ Histogram::Histogram(const int no_bins, System &p_system, bool do_log) {
             // std::exit(-1);
         }
     }
-}
 
-Histogram::~Histogram() {}
+    // We loop now through all shells und calculate their volumes and densities
+#pragma omp parallel for
+    for (auto &shell : m_shells) {
+        shell.update_volume();
+        shell.update_density();
+    }
+}
