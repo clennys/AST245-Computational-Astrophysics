@@ -155,8 +155,8 @@ auto plot_rho_step_1() {
     gr.AddLegend("Poissonian Error", "q");
 
     gr.Legend();
-    gr.WriteJPEG("hernquist.jpg");
-    gr.WritePNG("hernquist.png");
+    gr.WriteJPEG("plots/hernquist.jpg");
+    // gr.WritePNG("plots/hernquist.png");
     Logging::info("Hernquist plotted.");
 }
 
@@ -235,8 +235,8 @@ auto plot_forces_step_2() {
     gr.AddLegend("Numeric", "r.");
 
     gr.Legend();
-    gr.WriteJPEG("forces.jpg");
-    gr.WritePNG("forces.png");
+    gr.WriteJPEG("plots/forces.jpg");
+    // gr.WritePNG("plots/forces.png");
 }
 
 auto plot_do_steps() {
@@ -290,8 +290,8 @@ auto plot_do_steps() {
     gr.AddLegend("Numeric", "r.");
 
     gr.Legend();
-    gr.WriteJPEG("forces2.jpg");
-    // gr.WritePNG("forces2.png");
+    gr.WriteJPEG("plots/forces2.jpg");
+    // gr.WritePNG("plots/forces2.png");
 }
 
 auto main(const int argc, const char *const argv[]) -> int {
