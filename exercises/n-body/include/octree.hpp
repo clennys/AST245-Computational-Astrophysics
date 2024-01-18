@@ -14,6 +14,8 @@ class Octree {
 		Octree(BoundingCube root_box, PartVec particles);
 		auto build() -> void;
 		auto recursive_build_tree(Node *root) -> void;
+		auto tree_walk() -> void;
+		auto recursive_tree_walk(Node *root) -> void;
 
 };
 

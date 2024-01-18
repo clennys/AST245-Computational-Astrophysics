@@ -20,14 +20,14 @@ class Node {
 		// particles in node
     PartVec m_particles;
 
-    // Bounding box index
+    // Bounding cub index (x,y,z)
     //    (0,1,1) .+------+ (1,1,1)
     //          .' |    .'|
     // (0,1,0) +------+' (1,1,0)
-    //         |   |  |   |
-    //     (0,0,1).+--+---+ (1,0,1)
-    //			   |.'    | .'
-    // (0,0,0) +------+' (1,0,0)
+    //         |   |  |   |						y
+    //     (0,0,1).+--+---+ (1,0,1)   | z
+    //			   |.'    | .'						|/
+    // (0,0,0) +------+' (1,0,0)			+--x
     //
     BoundingCube m_bounding_cube;
 
