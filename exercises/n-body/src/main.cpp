@@ -260,23 +260,19 @@ auto tree_code() -> void {
     gr.Rotate(50, 10); // Adjust for a better viewing angle
 
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
-    double crit_opening_angle = 0.0;
-    TreeCode tree = TreeCode(root_cube, g_system.m_particles, crit_opening_angle);
+		double tolerance_angle = 0.5;
+    TreeCode tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
     tree.build();
-
-    gr.SetRanges(-800, 800, -800, 800, -800, 800);
-    gr.Axis();
-
-    tree.plot(gr);
-    auto transform = g_system.transform_vectors();
-    mglData x = std::get<0>(transform);
-    mglData y = std::get<1>(transform);
-    mglData z = std::get<2>(transform);
-
-    gr.Dots(x, y, z, "r");
-    gr.WriteFrame("plots/treecode.png");
-
-    // tree.tree_walk();
+    tree.tree_walk();
+    // gr.SetRanges(-800, 800, -800, 800, -800, 800);
+    // gr.Axis();
+    // tree.plot(gr);
+		// auto transform = g_system.transform_vectors();
+		// mglData x = std::get<0>(transform); 
+		// mglData y = std::get<1>(transform); 
+		// mglData z = std::get<2>(transform); 
+		// gr.Dots(x,y,z, "r");
+    // gr.WriteFrame("treecode.png");
 }
 
 auto main(const int argc, const char *const argv[]) -> int {

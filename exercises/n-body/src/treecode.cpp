@@ -2,9 +2,8 @@
 #include "logging.hpp"
 #include <iostream>
 
-TreeCode::TreeCode(BoundingCube root_box, PartVec particles, double crit_opening_angle)
-    : m_bounding_cube_root(root_box), m_particles(particles),
-      m_crit_opening_angle(crit_opening_angle) {
+TreeCode::TreeCode(BoundingCube root_box, PartVec particles, double tolerance_angle)
+    : m_bounding_cube_root(root_box), m_particles(particles), m_tolerance_angle(tolerance_angle) {
     m_octree = new Node(nullptr, m_particles, m_bounding_cube_root, 0);
 }
 
@@ -22,22 +21,36 @@ auto TreeCode::recursive_build_tree(Node *node) -> void {
     }
 }
 
-auto TreeCode::build() -> void { recursive_build_tree(m_octree); }
+auto TreeCode::build() -> void { 
+	Logging::info("Start Building Octree...");
+	recursive_build_tree(m_octree); 
+	Logging::info("Done.");
+}
 
-auto TreeCode::recursive_tree_walk(Node *node) -> void {
+auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> double {
+    if (node->calc_opening_angle(part) < m_tolerance_angle) {
+        return node->multipole_expansion(part);
+    }
+    double potential = 0.0;
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 Node *child = node->m_children(i, j, k);
                 if (child != nullptr) {
-                    recursive_tree_walk(child);
+                    potential += recursive_tree_walk(child, part);
                 }
             }
         }
     }
+    return potential;
 }
 
-auto TreeCode::tree_walk() -> void { recursive_tree_walk(m_octree); }
+// TODO: For small nummer of particle use direct force calc
+auto TreeCode::tree_walk() -> void {
+    for (auto &part : m_particles) {
+        part.m_treecode_potential = recursive_tree_walk(m_octree, part);
+    }
+}
 
 // TODO: (dhub) Use loops to draw lines
 auto TreeCode::plot_cube(mglGraph &gr, const Node *node) -> void {

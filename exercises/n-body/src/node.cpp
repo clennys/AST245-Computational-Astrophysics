@@ -121,8 +121,8 @@ auto Node::print_cube() -> void {
 
 auto kronecker_delta(int i, int j) -> int { return i == j ? 1 : 0; }
 
-auto Node::calc_quadrupole() -> void {
-    m_quadrupole = Eigen::Matrix3d::Zero();
+auto Node::calc_expansion_factors() -> void {
+		m_quadrupole = Eigen::Matrix3d::Zero();
     m_monopole = 0;
     m_center_of_mass = Eigen::Vector3d::Zero();
 
@@ -135,7 +135,7 @@ auto Node::calc_quadrupole() -> void {
         for (int j = 0; j < 3; j++) {
             for (const auto &part : m_particles) {
                 Eigen::Vector3d d_part_com = m_center_of_mass - part.m_position;
-                m_quadrupole(i, j) +=
+                quad(i, j) +=
                     part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
                                    kronecker_delta(i, j) * d_part_com.squaredNorm());
             }
@@ -143,12 +143,24 @@ auto Node::calc_quadrupole() -> void {
     }
 }
 
-// TODO: (dhub) Verify formula
+// TODO: (dhub) Verify formula -> In book they use radius, can we use the cube side length?
+// opening angle should be << 1
 auto Node::calc_opening_angle(const Particle3D &part) -> double {
     // NOTE: (dhub) Per construction this is always positive cube(1,0,0).x() >= cube(0,0,0).(x)
     double cube_side = m_bounding_cube(1, 0, 0).x() - m_bounding_cube(0, 0, 0).x();
     double dist_part_com = (part.m_position - m_center_of_mass).norm();
     return cube_side / dist_part_com;
+}
+
+auto Node::multipole_expansion(const Particle3D &part) -> double {
+		calc_expansion_factors();
+    auto dist_p_com = part.m_position - m_center_of_mass;
+
+    auto monopole_term = m_monopole / dist_p_com.norm();
+    auto quadrupole_term = 0.5 * (dist_p_com.transpose() * m_quadrupole * dist_p_com)(0) /
+                           std::pow(dist_p_com.norm(), 5);
+
+    return -(monopole_term + quadrupole_term);
 }
 
 Node::~Node() {
