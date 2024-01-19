@@ -26,6 +26,7 @@ auto init_system(const std::string_view &path) {
 
     g_system.update_half_mass_radius(hist.m_shells);
     g_system.update_scale_length();
+    g_system.update_relaxation();
 
     // System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
     //                                       g_system.m_scale_length * g_system.m_scale_length));
@@ -36,6 +37,7 @@ auto init_system(const std::string_view &path) {
     Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
     Logging::info("Scaling length of system:   {:>12.10f}", g_system.m_scale_length);
+    Logging::info("Relaxation time of system:  {:>12.10f}", g_system.m_relaxation);
     Logging::info("Avg Inter-particle dist:    {:>12.10f}", System::k_mean_inter_dist);
     Logging::info("Softening of system:        {:>12.10f}", System::s_softening);
     Logging::info("");

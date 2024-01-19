@@ -63,7 +63,8 @@ auto System::precalc_mean_inter_part_dist() -> double {
     // WARN: (aver) casting to double results in an illegal instruction, so bear with this
     // 64bit needed to hold the value, which is larger than 2^32
     // mean_dist /= static_cast<int64_t>(m_particles.size() * (m_particles.size() - 1));
-    mean_dist *= 2. / static_cast<int64_t>(m_particles.size() * (m_particles.size() - 1));
+    mean_dist *= 2. / static_cast<double>(
+                          static_cast<int64_t>(m_particles.size() * (m_particles.size() - 1)));
 
     return mean_dist;
 }
@@ -251,17 +252,12 @@ auto System::solver_do_step(const double delta_time) -> void {
     }
 }
 
-auto System::calc_relaxation() -> double {
-	// NOTE: (dhub) Assume G=1
-	double nr_part = m_particles.size();
-	double circular_velocity = std::sqrt(m_total_mass * m_half_mass_rad / m_half_mass_rad);
-	// TODO: (dhub) If not working maybe this alternative will?
-	//double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
-	double time_cross = nr_part / circular_velocity;
-	return nr_part / (8 * std::log(nr_part)) * time_cross;
+auto System::calc_relaxation() const -> double {
+    // NOTE: (dhub) Assume G=1
+    double nr_part = this->system_int_size();
+    double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
+    double time_cross = m_half_mass_rad / circular_velocity;
+    return nr_part / (8 * std::log(nr_part)) * time_cross;
 }
 
-auto System::update_relaxation() -> void{
-	m_relaxation = calc_relaxation();
-}
-
+auto System::update_relaxation() -> void { m_relaxation = calc_relaxation(); }

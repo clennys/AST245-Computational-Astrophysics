@@ -28,7 +28,7 @@ class System {
     double m_min_rad = std::numeric_limits<double>::max();
     double m_max_rad = 0.;
     double m_softening = 0.;
-		double m_relaxation = 0.;
+    double m_relaxation = 0.;
 
     explicit System(const std::string_view &path_name);
 
@@ -56,7 +56,7 @@ class System {
 
     /// @brief Return the particle that is the furthest away
     /// @note In a running system, the distances need to be calculated at each step
-    auto get_max_distance() -> Particle3D;
+    [[nodiscard]] auto get_max_distance() -> Particle3D;
 
     /// Calculate and return the total mass inside the system
     [[nodiscard]] auto calc_total_mass() const -> double;
@@ -79,8 +79,8 @@ class System {
     auto update_max_rad(const double rad) -> void;
 
     /// return the analytical density profile within a radius for Hernquist
-    auto density_hernquist(const double rad) const -> double;
-    auto newton_force(const double rad) const -> double;
+    [[nodiscard]] auto density_hernquist(const double rad) const -> double;
+    [[nodiscard]] auto newton_force(const double rad) const -> double;
 
     /// Return the mass found within a radius, not using `Histogram` or `Shells`
     auto get_constrained_shell_mass(const double lower_rad, const double upper_rad) const -> double;
@@ -88,17 +88,17 @@ class System {
     auto calc_direct_force() -> void;
 
     /// Helper method to adjust a radius to a bin size
-    auto convert_lin_to_log(const int no_bins, const double val) const -> double;
+    [[nodiscard]] auto convert_lin_to_log(const int no_bins, const double val) const -> double;
 
     /// Helper method to add a minimal epsilon to values to circumvent log(0) errors
-    static auto fit_log_to_plot(const double val) -> double;
+    [[nodiscard]] static auto fit_log_to_plot(const double val) -> double;
 
     /// Do one step forward in the system
     auto solver_do_step(const double delta_time) -> void;
 
-		auto calc_relaxation() -> double;
+    [[nodiscard]] auto calc_relaxation() const -> double;
 
-		auto update_relaxation() -> void;
+    auto update_relaxation() -> void;
 
   private:
 };
