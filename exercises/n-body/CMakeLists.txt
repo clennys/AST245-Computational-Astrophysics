@@ -39,17 +39,24 @@ add_compile_options(
     -Wlogical-op # warn about logical operations being used where bitwise were probably wanted
     -Wuseless-cast # warn if you perform a cast to the same type
 
-    # performance related flags
-    # -mavx2
-    -O3
-    -mfma
-    -mavx512f
-    -march=native
     -fopenmp
 
+    # performance related flags
+
+    -O3
+    -march=native
+    -mtune=native
+    -mavx512f
+    -mavx2
+    -mavx
+    -msse
+    -ftree-vectorize
+
+    # -mfma
 
     # -O0
     # -g3
+
 )
 
 add_executable(${PROJECT_NAME}
@@ -68,8 +75,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
+    mgl
     omp
     tbb
-    mgl
-    # mgl-qt5
 )

@@ -30,35 +30,37 @@ auto Data::read_data(const std::filesystem::path &path_name)
         while (ss >> word) {
             if (i == 0) {
                 // we formally skip the array number
+                part.m_id = std::stoul(word);
             } else if (i == 1) {
-                part.mass = std::stod(word);
+                part.m_mass = std::stod(word);
             } else if (i == 2) {
-                part.position.x() = std::stod(word);
+                part.m_position.x() = std::stod(word);
             } else if (i == 3) {
-                part.position.y() = std::stod(word);
+                part.m_position.y() = std::stod(word);
             } else if (i == 4) {
-                part.position.z() = std::stod(word);
+                part.m_position.z() = std::stod(word);
             } else if (i == 5) {
-                part.velocity.x() = std::stod(word);
+                part.m_velocity.x() = std::stod(word);
             } else if (i == 6) {
-                part.velocity.y() = std::stod(word);
+                part.m_velocity.y() = std::stod(word);
             } else if (i == 7) {
-                part.velocity.z() = std::stod(word);
+                part.m_velocity.z() = std::stod(word);
             } else if (i == 8) {
-                part.softening = std::stod(word);
+                // WARN: (aver) ignore softening for now
+                // part.m_softening = std::stod(word);
             } else if (i == 9) {
-                part.potential = std::stod(word);
+                part.m_potential = std::stod(word);
             }
-            part.update_origin_dist();
-            particles.push_back(part);
             i++;
-            // part.print_summary();
         }
         // in case the file is formatted in an invalid way
         if (i != 10) {
             return std::nullopt;
         }
+        part.update_origin_dist();
+        particles.emplace_back(part);
     }
+
     file.close();
     return particles;
 }

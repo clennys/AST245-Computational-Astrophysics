@@ -8,10 +8,19 @@
 
 class System {
   public:
-    // Use fixed mass
-    // static constexpr double km_mass = 92.4259;
-    static constexpr double km_mass = 1.;
+    //=============================================================================================
+    // Static variables and constants
+    //=============================================================================================
+    static constexpr double k_mean_inter_dist = 4.023775510528517;
+    /// Non dimensional particle mass of one
+    static constexpr double k_non_dim_mass = 1.;
+    // static constexpr double km_non_dim_mass = 92.4259;
+    /// Softening to be applied in Force calculcation
+    static double s_softening;
 
+    //=============================================================================================
+    // Regular member variables
+    //=============================================================================================
     PartVec m_particles;
     double m_total_mass = 0.;
     double m_half_mass_rad = 0.;
@@ -19,22 +28,36 @@ class System {
     double m_min_rad = std::numeric_limits<double>::max();
     double m_max_rad = 0.;
     double m_softening = 0.;
+    double m_relaxation = 0.;
 
-    explicit System(const std::string_view &path_name);
-
-    System();
+    //=============================================================================================
+    // Ctors, Dtors, etc.
+    //=============================================================================================
+    System() = default;
     System(System &&) = default;
     System(const System &) = default;
     System &operator=(System &&) = default;
     System &operator=(const System &) = default;
-    ~System();
+    ~System() = default;
+
+    /// Special Init method, initializes particles with `path_name` file and calculates constant for
+    auto init_system(const std::string_view &path_name) -> void;
+
+    /// Return the count of particles in the whole system cast as an `int` for correct calculations
+    /// with it
+    auto system_int_size() const -> int;
+
+    /// Calculate the Mean inter-particle distance
+    ///
+    /// NOTE: Recommended to be run once, as O(N^2)
+    [[nodiscard]] auto precalc_mean_inter_part_dist() -> double;
 
     auto transform_vectors()
         -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>;
 
     /// @brief Return the particle that is the furthest away
     /// @note In a running system, the distances need to be calculated at each step
-    auto get_max_distance() -> Particle3D;
+    [[nodiscard]] auto get_max_distance() -> Particle3D;
 
     /// Calculate and return the total mass inside the system
     [[nodiscard]] auto calc_total_mass() const -> double;
@@ -57,13 +80,27 @@ class System {
     auto update_max_rad(const double rad) -> void;
 
     /// return the analytical density profile within a radius for Hernquist
-    auto density_hernquist(const double rad) const -> double;
-    auto newton_force(const double rad) const -> double;
+    [[nodiscard]] auto density_hernquist(const double rad) const -> double;
+    [[nodiscard]] auto newton_force(const double rad) const -> double;
 
-    /// Return the mass found within a radius, not using `Histogram` or `Shells`
-    auto get_constrained_shell_mass(const double lower_rad, const double upper_rad) const -> double;
+    auto calc_direct_initial_force() -> void;
+
+    /// Helper method to adjust a radius to a bin size
+    [[nodiscard]] auto convert_lin_to_log(const int no_bins, const double val) const -> double;
+
+    /// Helper method to add a minimal epsilon to values to circumvent log(0) errors
+    [[nodiscard]] static auto fit_log_to_plot(const double val) -> double;
+
+    /// Do one step forward in the system
+    auto solver_do_step(const double delta_time) -> void;
+
+    [[nodiscard]] auto calc_relaxation() const -> double;
+
+    auto update_relaxation() -> void;
 
   private:
+    /// Calculate runtime constants for system deployment
+    auto precalc_consts() -> void;
 };
 
 #endif // ! COMPASTRO_SYSTEM_H_
