@@ -42,6 +42,7 @@ add_compile_options(
     -fopenmp
 
     # performance related flags
+
     -O3
     -march=native
     -mtune=native
@@ -50,10 +51,12 @@ add_compile_options(
     -mavx
     -msse
     -ftree-vectorize
+
     # -mfma
 
     # -O0
     # -g3
+
 )
 
 add_executable(${PROJECT_NAME}
