@@ -56,8 +56,8 @@ auto plot_rho_step_1() {
     // set minimal radius to something else than 0, otherwise errors ensue
 
     auto sum = 0.;
-#if 1
     Histogram hist(no_bins, g_system, true);
+
     for (const auto &shell : hist.m_shells) {
 
         auto hern_rho = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) / 2);
@@ -84,44 +84,6 @@ auto plot_rho_step_1() {
 
         sum += shell.m_mass;
     }
-
-#else
-    for (int r = 0; r <= no_bins; r++) {
-        auto lower_rad = g_system.convert_lin_to_log(no_bins, r);
-        auto upper_rad = g_system.convert_lin_to_log(no_bins, r + 1);
-        Logging::info("bin: {}, lower: {}, upper {}", r, lower_rad, upper_rad);
-
-        const auto k_shell_mass = g_system.get_constrained_shell_mass(lower_rad, upper_rad);
-        Logging::info("Shell mass: {}", k_shell_mass);
-        sum += k_shell_mass;
-        const auto k_shell_volume =
-            k_shell_vol_pref * (std::pow(upper_rad, 3) - std::pow(lower_rad, 3));
-
-        const auto k_no_parts_in_shell = k_shell_mass / Particle3D::km_non_dim_mass;
-
-        const auto k_shell_rho = k_shell_mass / k_shell_volume;
-        const auto k_hern_rho = g_system.density_hernquist((lower_rad + upper_rad) / 2);
-
-        // NOTE: (aver) \lambda = number of shells in current bin
-        // const auto k_rho_error =
-        //     std::sqrt(k_no_parts_in_shell) * Particle3D::km_non_dim_mass / k_shell_volume;
-
-        // NOTE: (aver) \lambda = number of shells in a Hernquist bin
-        const auto no_parts_in_hern = (k_hern_rho * k_shell_volume) / Particle3D::km_non_dim_mass;
-        // const auto k_rho_error =
-        //     std::sqrt(no_parts_in_hern) * Particle3D::km_non_dim_mass / k_shell_volume;
-
-        // NOTE: (aver) \lambda = number of shells on average throughout all bins
-        const auto k_rho_error = std_dev * Particle3D::km_non_dim_mass / k_shell_volume;
-
-        index.emplace_back(lower_rad);
-        hernquist_dens.emplace_back(System::fit_log_to_plot(k_hern_rho));
-        numeric_dens.emplace_back(System::fit_log_to_plot(k_shell_rho));
-        rho_error.emplace_back(k_rho_error);
-
-        sum += shell.m_mass;
-    }
-#endif
 
     // Logging::dbg("total mass {}, expected 50010", sum);
     assert(sum == 50010);

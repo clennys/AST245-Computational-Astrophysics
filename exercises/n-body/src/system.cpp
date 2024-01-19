@@ -148,18 +148,6 @@ auto System::update_scale_length() -> void { m_scale_length = calc_scale_length(
 auto System::update_min_rad(const double rad) -> void { m_min_rad = std::min(m_min_rad, rad); }
 auto System::update_max_rad(const double rad) -> void { m_max_rad = std::max(m_max_rad, rad); }
 
-auto System::get_constrained_shell_mass(const double lower_rad, const double upper_rad) const
-    -> double {
-    return std::accumulate(
-        m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
-            if (part.m_distance >= lower_rad and part.m_distance <= upper_rad) {
-                // return sum + part.mass;
-                return sum + System::k_non_dim_mass;
-            }
-            return sum + 0.;
-        });
-}
-
 auto System::density_hernquist(const double rad) const -> double {
     return (m_total_mass * m_scale_length) /
            (2 * std::numbers::pi * rad * std::pow(rad + m_scale_length, 3));

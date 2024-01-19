@@ -82,9 +82,6 @@ class System {
     [[nodiscard]] auto density_hernquist(const double rad) const -> double;
     [[nodiscard]] auto newton_force(const double rad) const -> double;
 
-    /// Return the mass found within a radius, not using `Histogram` or `Shells`
-    auto get_constrained_shell_mass(const double lower_rad, const double upper_rad) const -> double;
-
     auto calc_direct_force() -> void;
 
     /// Helper method to adjust a radius to a bin size
