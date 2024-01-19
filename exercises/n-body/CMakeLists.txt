@@ -66,7 +66,7 @@ add_executable(${PROJECT_NAME}
     src/histogram.cpp
     src/shell.cpp
     src/system.cpp
-    src/octree.cpp
+    src/treecode.cpp
 	src/node.cpp
 )
 

@@ -1,9 +1,9 @@
 #include "histogram.hpp"
 #include "logging.hpp"
 #include "node.hpp"
-#include "octree.hpp"
 #include "particle.hpp"
 #include "system.hpp"
+#include "treecode.hpp"
 
 #include "Eigen/Eigen"
 #include "mgl2/mgl.h"
@@ -261,7 +261,8 @@ auto tree_code() -> void {
     gr.Rotate(50, 10); // Adjust for a better viewing angle
                        //
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
-    Octree tree = Octree(root_cube, g_system.m_particles);
+    double crit_opening_angle = 0.0;
+    TreeCode tree = TreeCode(root_cube, g_system.m_particles, crit_opening_angle);
     tree.build();
     gr.SetRanges(-800, 800, -800, 800, -800, 800);
     gr.Axis();
@@ -271,7 +272,7 @@ auto tree_code() -> void {
     mglData y = std::get<1>(transform);
     mglData z = std::get<2>(transform);
     gr.Dots(x, y, z, "r");
-    gr.WriteFrame("octree.png");
+    gr.WriteFrame("treecode.png");
     // tree.tree_walk();
 }
 

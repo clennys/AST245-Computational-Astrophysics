@@ -1,18 +1,19 @@
-#ifndef OCTREE_H_
-#define OCTREE_H_
+#ifndef TREECODE_H_
+#define TREECODE_H_
 
 #include "node.hpp"
 #include <mgl2/mgl.h>
 
-class Octree {
+class TreeCode {
 	public:
-		Node* m_root_node;
+		Node* m_octree;
 		BoundingCube m_bounding_cube_root;
 		PartVec m_particles;
 		// int m_height = -1;
+		double m_crit_opening_angle;
 
 
-		Octree(BoundingCube root_box, PartVec particles);
+		TreeCode(BoundingCube root_cube, PartVec particles, double crit_opening_angle);
 		auto build() -> void;
 		auto recursive_build_tree(Node *root) -> void;
 		auto tree_walk() -> void;
@@ -24,4 +25,4 @@ class Octree {
 };
 
 
-#endif // ! OCTREE_H_
+#endif // ! TREECODE_H_

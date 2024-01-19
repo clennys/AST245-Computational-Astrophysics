@@ -1,13 +1,13 @@
-#include "octree.hpp"
+#include "treecode.hpp"
 #include "logging.hpp"
 #include <iostream>
 
-Octree::Octree(BoundingCube root_box, PartVec particles)
-    : m_bounding_cube_root(root_box), m_particles(particles) {
-    m_root_node = new Node(nullptr, m_particles, m_bounding_cube_root, 0);
+TreeCode::TreeCode(BoundingCube root_box, PartVec particles, double crit_opening_angle)
+    : m_bounding_cube_root(root_box), m_particles(particles), m_crit_opening_angle(crit_opening_angle) {
+    m_octree = new Node(nullptr, m_particles, m_bounding_cube_root, 0);
 }
 
-auto Octree::recursive_build_tree(Node *node) -> void {
+auto TreeCode::recursive_build_tree(Node *node) -> void {
     node->populate_children();
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
@@ -21,9 +21,9 @@ auto Octree::recursive_build_tree(Node *node) -> void {
     }
 }
 
-auto Octree::build() -> void { recursive_build_tree(m_root_node); }
+auto TreeCode::build() -> void { recursive_build_tree(m_octree); }
 
-auto Octree::recursive_tree_walk(Node *node) -> void {
+auto TreeCode::recursive_tree_walk(Node *node) -> void {
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
@@ -36,10 +36,10 @@ auto Octree::recursive_tree_walk(Node *node) -> void {
     }
 }
 
-auto Octree::tree_walk() -> void { recursive_tree_walk(m_root_node); }
+auto TreeCode::tree_walk() -> void { recursive_tree_walk(m_octree); }
 
 // TODO: (dhub) Use loops to draw lines
-auto Octree::plot_cube(mglGraph &gr, const Node *node) -> void {
+auto TreeCode::plot_cube(mglGraph &gr, const Node *node) -> void {
     // Ensure there are exactly 8 corners
     // Draw lines between the vertices to form the cube
     BoundingCube cube = node->m_bounding_cube;
@@ -83,7 +83,7 @@ auto Octree::plot_cube(mglGraph &gr, const Node *node) -> void {
             mglPoint(cube(0, 1, 1).x(), cube(0, 1, 1).y(), cube(0, 1, 1).z()));
 }
 
-auto Octree::plot_recursive(mglGraph &gr, const Node *node) -> void {
+auto TreeCode::plot_recursive(mglGraph &gr, const Node *node) -> void {
 	plot_cube(gr, node);
   for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
@@ -95,8 +95,8 @@ auto Octree::plot_recursive(mglGraph &gr, const Node *node) -> void {
             }
         }
     }
-
 }
-auto Octree::plot(mglGraph &gr) -> void{
-	plot_recursive(gr, m_root_node);
+
+auto TreeCode::plot(mglGraph &gr) -> void{
+	plot_recursive(gr, m_octree);
 };

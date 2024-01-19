@@ -86,12 +86,11 @@ auto Node::in_bounding_box(const BoundingCube cube, const Particle3D &part) -> b
 auto Node::populate_children() -> void {
     SubBoundingCubes new_bounding_cubes = octa_split_bounding_box();
     for (const auto &part : m_particles) {
-			// NOTE: Particles only fall in single sub bounding cube, there are some on the boundary
+        // NOTE: Particles only fall in single sub bounding cube, there are some on the boundary
         bool particle_allocated = false;
         for (int i = 0; i < 2 && !particle_allocated; i++) {
             for (int j = 0; j < 2 && !particle_allocated; j++) {
                 for (int k = 0; k < 2 && !particle_allocated; k++) {
-                    // TODO: (dhub) stop triple loop when particle was allocated
                     if (in_bounding_box(new_bounding_cubes(i, j, k), part)) {
                         if (m_children(i, j, k) == nullptr) {
                             PartVec child_part = {part};
@@ -119,6 +118,38 @@ auto Node::print_cube() -> void {
         }
     }
     Logging::info("Summary DONE");
+}
+
+auto kronecker_delta(int i, int j) -> int { return i == j ? 1 : 0; }
+
+auto Node::calc_quadrupole() -> void {
+    m_quadrupole = Eigen::Matrix3d::Zero();
+    m_monopole = 0;
+    m_center_of_mass = Eigen::Vector3d::Zero();
+
+    for (const auto &part : m_particles) {
+        m_monopole += part.m_mass;
+        m_center_of_mass += part.m_position * part.m_mass;
+    }
+    m_center_of_mass *= 1 / m_monopole;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (const auto &part : m_particles) {
+                Eigen::Vector3d d_part_com = m_center_of_mass - part.m_position;
+                m_quadrupole(i, j) +=
+                    part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
+                                   kronecker_delta(i, j) * d_part_com.squaredNorm());
+            }
+        }
+    }
+}
+
+// TODO: (dhub) Verify formula
+auto Node::calc_opening_angle(const Particle3D &part) -> double {
+    // NOTE: (dhub) Per construction this is always positive cube(1,0,0).x() >= cube(0,0,0).(x)
+    double cube_side = m_bounding_cube(1, 0, 0).x() - m_bounding_cube(0, 0, 0).x();
+    double dist_part_com = (part.m_position - m_center_of_mass).norm();
+    return cube_side / dist_part_com;
 }
 
 Node::~Node() {
