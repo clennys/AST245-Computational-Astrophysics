@@ -181,7 +181,7 @@ auto plot_forces_step_2() {
         analytic_force.emplace_back(System::fit_log_to_plot(val));
     }
 
-    Logging::info("Calculating direct forces...");
+    Logging::info("Calculating initial direct forces...");
     g_system.calc_direct_force();
 
     Logging::info("Creating Histogram with {} shells...", no_bins);
@@ -220,6 +220,7 @@ auto plot_forces_step_2() {
 
     gr.SetRange('x', x);
     gr.SetRange('y', y_min, y_max);
+    // gr.SetRange('y', nforce);
 
     gr.SetFontSize(2);
     gr.SetCoor(mglLogX);
@@ -249,6 +250,7 @@ auto plot_do_steps() {
         g_system.solver_do_step(kDeltaTime);
     }
 
+    std::vector<double> numeric_dens;
     std::vector<double> direct_force;
     std::vector<double> idx;
 
@@ -267,12 +269,15 @@ auto plot_do_steps() {
                                        return sum + projection;
                                    });
         val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+
+        numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
         direct_force.emplace_back(System::fit_log_to_plot(val));
         idx.emplace_back(shell.m_lower_inc);
     }
 
     mglData x = idx;
     mglData nforce = direct_force;
+    mglData ndens = numeric_dens;
 
     mglGraph gr(0, 3000, 2000);
 
@@ -292,6 +297,23 @@ auto plot_do_steps() {
     gr.Legend();
     gr.WriteJPEG("plots/forces2.jpg");
     // gr.WritePNG("plots/forces2.png");
+
+    gr.ClearFrame();
+    gr.ClearLegend();
+    gr.ResetFrames();
+
+    gr.SetRange('x', x);
+    gr.SetRange('y', ndens);
+
+    gr.SetFontSize(2);
+    gr.SetCoor(mglLogLog);
+    gr.Axis();
+
+    gr.Plot(x, ndens, "r.");
+    gr.AddLegend("Numeric", "r.");
+
+    gr.Legend();
+    gr.WriteJPEG("plots/density2.jpg");
 }
 
 auto main(const int argc, const char *const argv[]) -> int {
@@ -303,10 +325,12 @@ auto main(const int argc, const char *const argv[]) -> int {
     init_system(argv[1]);
 
     // task 1
-    plot_rho_step_1();
-    // plot_forces_step_2();
+    // plot_rho_step_1();
+    plot_forces_step_2();
 
     // task 2
+    plot_do_steps();
+    // TODO: (aver)
 
     Logging::info("Successfully quit!");
     return 0;
