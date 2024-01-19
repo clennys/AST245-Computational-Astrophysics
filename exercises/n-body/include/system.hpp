@@ -99,11 +99,7 @@ class System {
 
     auto update_relaxation() -> void;
 
-    auto calc_relaxation() -> double;
-
-    auto update_relaxation() -> void;
-
-		auto calc_overall_bounding_cube() -> BoundingCube;
+    auto calc_overall_bounding_cube() -> BoundingCube;
 
   private:
     /// Calculate runtime constants for system deployment

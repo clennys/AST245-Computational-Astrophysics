@@ -53,9 +53,6 @@ auto Data::read_data(const std::filesystem::path &path_name)
             }
             i++;
         }
-        part.update_origin_dist();
-        particles.push_back(part);
-
         // in case the file is formatted in an invalid way
         if (i != 10) {
             return std::nullopt;

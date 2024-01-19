@@ -3,7 +3,8 @@
 #include <iostream>
 
 TreeCode::TreeCode(BoundingCube root_box, PartVec particles, double crit_opening_angle)
-    : m_bounding_cube_root(root_box), m_particles(particles), m_crit_opening_angle(crit_opening_angle) {
+    : m_bounding_cube_root(root_box), m_particles(particles),
+      m_crit_opening_angle(crit_opening_angle) {
     m_octree = new Node(nullptr, m_particles, m_bounding_cube_root, 0);
 }
 
@@ -43,6 +44,7 @@ auto TreeCode::plot_cube(mglGraph &gr, const Node *node) -> void {
     // Ensure there are exactly 8 corners
     // Draw lines between the vertices to form the cube
     BoundingCube cube = node->m_bounding_cube;
+
     // draw bottom face
     gr.Line(mglPoint(cube(0, 0, 0).x(), cube(0, 0, 0).y(), cube(0, 0, 0).z()),
             mglPoint(cube(1, 0, 0).x(), cube(1, 0, 0).y(), cube(1, 0, 0).z()));
@@ -84,8 +86,8 @@ auto TreeCode::plot_cube(mglGraph &gr, const Node *node) -> void {
 }
 
 auto TreeCode::plot_recursive(mglGraph &gr, const Node *node) -> void {
-	plot_cube(gr, node);
-  for (int i = 0; i < 2; i++) {
+    plot_cube(gr, node);
+    for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 Node *child = node->m_children(i, j, k);
@@ -97,6 +99,4 @@ auto TreeCode::plot_recursive(mglGraph &gr, const Node *node) -> void {
     }
 }
 
-auto TreeCode::plot(mglGraph &gr) -> void{
-	plot_recursive(gr, m_octree);
-};
+auto TreeCode::plot(mglGraph &gr) -> void { plot_recursive(gr, m_octree); };

@@ -2,7 +2,7 @@
 #define NODE_H_
 
 #include "particle.hpp"
-#include <memory>
+
 #include <unsupported/Eigen/CXX11/Tensor>
 
 class Node;
@@ -10,6 +10,7 @@ class Node;
 using BoundingCube = Eigen::Tensor<Eigen::Vector3d, 3>;
 using SubBoundingCubes = Eigen::Tensor<BoundingCube, 3>;
 using SubCubesNodes = Eigen::Tensor<Node *, 3>;
+
 class Node {
   public:
     // parent pointer
@@ -40,7 +41,7 @@ class Node {
     auto in_bounding_box(Particle3D part) -> bool;
     auto multipole_expansion() -> void;
     auto calc_quadrupole() -> void;
-		auto calc_opening_angle(const Particle3D &part) -> double;
+    auto calc_opening_angle(const Particle3D &part) -> double;
     auto populate_children() -> void;
     auto octa_split_bounding_box() -> SubBoundingCubes;
     auto create_sub_bounding_cube(Eigen::Vector3d origin, double cube_side_length) -> BoundingCube;

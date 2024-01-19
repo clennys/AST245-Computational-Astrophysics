@@ -1,7 +1,6 @@
 #include "node.hpp"
 #include "logging.hpp"
 #include <iostream>
-#include <memory>
 
 Node::Node() {}
 
