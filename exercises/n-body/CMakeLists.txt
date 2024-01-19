@@ -4,10 +4,10 @@ cmake_minimum_required(VERSION 3.20)
 # set(VCPKG_CRT_LINKAGE dynamic)
 # set(VCPKG_LIBRARY_LINKAGE dynamic)
 
-set(CMAKE_TOOLCHAIN_FILE "/Users/arminveres/vcpkg/scripts/buildsystems/vcpkg.cmake")
+set(CMAKE_TOOLCHAIN_FILE "/home/arminveres/gitfiles/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-set(CMAKE_C_COMPILER gcc-13)
-set(CMAKE_CXX_COMPILER g++-13)
+# set(CMAKE_C_COMPILER gcc-13)
+# set(CMAKE_CXX_COMPILER g++-13)
 
 project(n-body
     VERSION 0.1.0
