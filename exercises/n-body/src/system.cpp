@@ -243,6 +243,11 @@ auto System::solver_do_step(const double delta_time) -> void {
 auto System::calc_relaxation() const -> double {
     // NOTE: (dhub) Assume G=1
     double nr_part = this->system_int_size();
+    // NOTE: (aver) the Mass(R_hm) == half the mass obviously, including the assumption of G==1,
+    // m==1
+    // Since the half mass radius is fixed, we do not expect change of the relaxation time if the
+    // softening were to be increased or decreased. Although numerically, I don't know what the
+    // implication are if softening is increased above mean inter particle separation
     double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
     double time_cross = m_half_mass_rad / circular_velocity;
     return nr_part / (8 * std::log(nr_part)) * time_cross;

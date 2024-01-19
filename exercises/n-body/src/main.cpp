@@ -289,6 +289,10 @@ auto main(const int argc, const char *const argv[]) -> int {
 
     // task 1
     // plot_rho_step_1();
+    // TODO: (aver) 
+    // - We still need to do a comparison between different softeining values and discuss their
+    //      significance
+    // - Also explain dependence of force calculation on direct force calculation
     plot_forces_step_2();
 
     // task 2

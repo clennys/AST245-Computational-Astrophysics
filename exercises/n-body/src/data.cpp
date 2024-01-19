@@ -58,7 +58,7 @@ auto Data::read_data(const std::filesystem::path &path_name)
             return std::nullopt;
         }
         part.update_origin_dist();
-        particles.push_back(part);
+        particles.emplace_back(part);
     }
 
     file.close();
