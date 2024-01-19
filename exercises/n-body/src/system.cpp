@@ -5,7 +5,7 @@
 #include "node.hpp"
 #include "particle.hpp"
 
-#include "omp.h"
+#include "Eigen/Eigen"
 
 #include <algorithm>
 #include <cassert>
@@ -198,7 +198,7 @@ auto System::calc_direct_initial_force() -> void {
 #pragma omp parallel for
     for (uint64_t i = 0; i < m_particles.size(); ++i) {
         // reset on each `i` change
-        auto sum_force_inter_part = Eigen::Vector3d({0, 0, 0});
+        auto sum_force_inter_part = Eigen::Vector3d().setZero();
 
         for (uint64_t j = 0; j < m_particles.size(); ++j) {
             if (i == j)
@@ -231,13 +231,13 @@ auto System::solver_do_step(const double delta_time) -> void {
             part.m_velocity + (part.m_direct_force / System::k_non_dim_mass) * delta_time / 2;
 
         part.m_position += velocity_mid * delta_time;
-        auto force_new = Eigen::Vector3d({0, 0, 0});
+        auto force_new = Eigen::Vector3d().setZero();
         // update forces at new position
 
 #if 1
 #pragma omp parallel private(part)
         {
-            auto local_force = Eigen::Vector3d({0, 0, 0});
+            auto local_force = Eigen::Vector3d().setZero();
 
 #pragma omp for
             for (size_t i = 0; i < m_particles.size(); ++i) {
@@ -286,19 +286,21 @@ auto System::calc_relaxation() const -> double {
 auto System::update_relaxation() -> void { m_relaxation = calc_relaxation(); }
 
 auto System::calc_overall_bounding_cube() -> BoundingCube {
-    auto max_dist = get_max_distance().m_position.norm();
-    BoundingCube cube(2, 2, 2);
+    // WARN: (aver) Instantiating an Eigen::Tensor mallocs a few times, and apparently it does so
+    // asynchronously, leading to an illegal instruction error at cube access
+    auto cube = BoundingCube(2, 2, 2);
+    auto vec = Eigen::Vector3d().setZero();
+
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
-                std::cerr << "PREVENTING FROM ILLEGAL HARDWARE ACCESS WITH THIS CERR HOW?????"
-                          << std::endl;
-                double x = i == 1 ? max_dist : -max_dist;
-                double y = j == 1 ? max_dist : -max_dist;
-                double z = k == 1 ? max_dist : -max_dist;
-                cube(i, j, k) = Eigen::Vector3d(x, y, z);
+                vec.x() = i == 1 ? m_max_rad : -m_max_rad;
+                vec.y() = j == 1 ? m_max_rad : -m_max_rad;
+                vec.z() = k == 1 ? m_max_rad : -m_max_rad;
+                cube(i, j, k) = vec;
             }
         }
     }
+
     return cube;
 }

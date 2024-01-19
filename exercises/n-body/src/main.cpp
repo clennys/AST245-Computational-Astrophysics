@@ -255,24 +255,27 @@ auto plot_do_steps() {
 }
 
 auto tree_code() -> void {
-    mglGraph gr;
+    mglGraph gr(0, 3000, 2000);
     // set plot parameters
-    gr.SetSize(1920, 1080);
     gr.Rotate(50, 10); // Adjust for a better viewing angle
-                       //
+
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
     double crit_opening_angle = 0.0;
     TreeCode tree = TreeCode(root_cube, g_system.m_particles, crit_opening_angle);
     tree.build();
+
     gr.SetRanges(-800, 800, -800, 800, -800, 800);
     gr.Axis();
+
     tree.plot(gr);
     auto transform = g_system.transform_vectors();
     mglData x = std::get<0>(transform);
     mglData y = std::get<1>(transform);
     mglData z = std::get<2>(transform);
+
     gr.Dots(x, y, z, "r");
-    gr.WriteFrame("treecode.png");
+    gr.WriteFrame("plots/treecode.png");
+
     // tree.tree_walk();
 }
 
@@ -284,7 +287,9 @@ auto main(const int argc, const char *const argv[]) -> int {
     // initialize the g_system variable
     g_system.init_system(argv[1]);
 
+    // ============================================================================================
     // task 1
+    // ============================================================================================
     plot_rho_step_1();
     // TODO: (aver)
     // - We still need to do a comparison between different softeining values and discuss their
@@ -292,11 +297,10 @@ auto main(const int argc, const char *const argv[]) -> int {
     // - Also explain dependence of force calculation on direct force calculation
     plot_forces_step_2();
 
+    // ============================================================================================
     // task 2
-    plot_do_steps();
-    // TODO: (aver)
-
-    // task 2
+    // ============================================================================================
+    // plot_do_steps();
     tree_code();
 
     Logging::info("Successfully quit!");
