@@ -1,5 +1,6 @@
 #include "system.hpp"
 #include "data.hpp"
+#include "histogram.hpp"
 #include "logging.hpp"
 #include "particle.hpp"
 
@@ -18,13 +19,40 @@
 // set default softening
 double System::s_softening = 0.;
 
-System::System(const std::string_view &path_name) {
+auto System::init_system(const std::string_view &path_name) -> void {
+
+    Logging::info("Initializing System with file: {}", path_name);
+
     auto particles_opt = Data::read_data(path_name);
     if (not particles_opt.has_value()) {
         Logging::err("Error while reading file: {}", path_name);
         std::exit(-1);
     };
     m_particles = particles_opt.value();
+
+    precalc_consts();
+
+    // use this shell to calculcate half_mass_radius, and scale_length
+    Histogram hist(100'000, *this);
+
+    update_half_mass_radius(hist.m_shells);
+    update_scale_length();
+    update_relaxation();
+
+    // System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
+    //                                       g_system.m_scale_length * g_system.m_scale_length));
+    System::s_softening =
+        -1 /
+        (std::sqrt(m_max_rad * m_max_rad + System::k_mean_inter_dist * System::k_mean_inter_dist));
+    System::s_softening /= 20;
+
+    Logging::info("Total mass of system:       {:<12}", m_total_mass);
+    Logging::info("Half mass radius of system: {:>12.10f}", m_half_mass_rad);
+    Logging::info("Scaling length of system:   {:>12.10f}", m_scale_length);
+    Logging::info("Relaxation time of system:  {:>12.10f}", m_relaxation);
+    Logging::info("Avg Inter-particle dist:    {:>12.10f}", System::k_mean_inter_dist);
+    Logging::info("Softening of system:        {:>12.10f}", System::s_softening);
+    Logging::info("");
 }
 
 auto System::system_int_size() const -> int { return static_cast<int>(m_particles.size()); }
@@ -163,7 +191,8 @@ auto System::newton_force(const double rad) const -> double {
            ((rad + m_scale_length) * (rad + m_scale_length));
 }
 
-auto System::calc_direct_force() -> void {
+auto System::calc_direct_initial_force() -> void {
+    Logging::info("Calculating initial direct forces...");
 #if 1
 #pragma omp parallel for
     for (uint64_t i = 0; i < m_particles.size(); ++i) {

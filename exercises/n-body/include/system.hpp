@@ -30,14 +30,18 @@ class System {
     double m_softening = 0.;
     double m_relaxation = 0.;
 
-    explicit System(const std::string_view &path_name);
-
+    //=============================================================================================
+    // Ctors, Dtors, etc.
+    //=============================================================================================
     System() = default;
     System(System &&) = default;
     System(const System &) = default;
     System &operator=(System &&) = default;
     System &operator=(const System &) = default;
     ~System() = default;
+
+    /// Special Init method, initializes particles with `path_name` file and calculates constant for
+    auto init_system(const std::string_view &path_name) -> void;
 
     /// Return the count of particles in the whole system cast as an `int` for correct calculations
     /// with it
@@ -47,9 +51,6 @@ class System {
     ///
     /// NOTE: Recommended to be run once, as O(N^2)
     [[nodiscard]] auto precalc_mean_inter_part_dist() -> double;
-
-    /// Calculate runtime constants for system deployment
-    auto precalc_consts() -> void;
 
     auto transform_vectors()
         -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>;
@@ -82,7 +83,7 @@ class System {
     [[nodiscard]] auto density_hernquist(const double rad) const -> double;
     [[nodiscard]] auto newton_force(const double rad) const -> double;
 
-    auto calc_direct_force() -> void;
+    auto calc_direct_initial_force() -> void;
 
     /// Helper method to adjust a radius to a bin size
     [[nodiscard]] auto convert_lin_to_log(const int no_bins, const double val) const -> double;
@@ -98,6 +99,8 @@ class System {
     auto update_relaxation() -> void;
 
   private:
+    /// Calculate runtime constants for system deployment
+    auto precalc_consts() -> void;
 };
 
 #endif // ! COMPASTRO_SYSTEM_H_

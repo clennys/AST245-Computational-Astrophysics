@@ -15,34 +15,6 @@
 ///
 static System g_system;
 
-// TODO: (aver) consider making this a factory like static function on the `System` class
-auto init_system(const std::string_view &path) {
-    Logging::info("Initializing System with file: {}", path);
-    g_system = System(path);
-    g_system.precalc_consts();
-
-    // use this shell to calculcate half_mass_radius, and scale_length
-    Histogram hist(100'000, g_system);
-
-    g_system.update_half_mass_radius(hist.m_shells);
-    g_system.update_scale_length();
-    g_system.update_relaxation();
-
-    // System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
-    //                                       g_system.m_scale_length * g_system.m_scale_length));
-    System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
-                                          System::k_mean_inter_dist * System::k_mean_inter_dist));
-    System::s_softening /= 200;
-
-    Logging::info("Total mass of system:       {:<12}", g_system.m_total_mass);
-    Logging::info("Half mass radius of system: {:>12.10f}", g_system.m_half_mass_rad);
-    Logging::info("Scaling length of system:   {:>12.10f}", g_system.m_scale_length);
-    Logging::info("Relaxation time of system:  {:>12.10f}", g_system.m_relaxation);
-    Logging::info("Avg Inter-particle dist:    {:>12.10f}", System::k_mean_inter_dist);
-    Logging::info("Softening of system:        {:>12.10f}", System::s_softening);
-    Logging::info("");
-}
-
 auto plot_rho_step_1() {
     std::vector<double> index;
     std::vector<double> hernquist_dens;
@@ -144,10 +116,9 @@ auto plot_forces_step_2() {
         analytic_force.emplace_back(System::fit_log_to_plot(val));
     }
 
-    Logging::info("Calculating initial direct forces...");
-    g_system.calc_direct_force();
+    // Initialize forces, with direct calculation
+    g_system.calc_direct_initial_force();
 
-    Logging::info("Creating Histogram with {} shells...", no_bins);
     auto dir_force_hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : dir_force_hist.m_shells) {
@@ -285,11 +256,11 @@ auto main(const int argc, const char *const argv[]) -> int {
         return -1;
     }
     // initialize the g_system variable
-    init_system(argv[1]);
+    g_system.init_system(argv[1]);
 
     // task 1
-    // plot_rho_step_1();
-    // TODO: (aver) 
+    plot_rho_step_1();
+    // TODO: (aver)
     // - We still need to do a comparison between different softeining values and discuss their
     //      significance
     // - Also explain dependence of force calculation on direct force calculation

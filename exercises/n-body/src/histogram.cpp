@@ -9,7 +9,8 @@
 #include <format>
 #include <omp.h>
 
-Histogram::Histogram(const int no_bins, System &p_system, bool do_log) {
+Histogram::Histogram(const int no_bins, const System &p_system, bool do_log) {
+    Logging::info("Creating Histogram with {} shells...", no_bins);
 
     // WARN: (aver) Addded one to radious to securely place all particles into shells later on
     const auto bin_radius = (p_system.m_max_rad + 1) / no_bins;
