@@ -25,10 +25,10 @@ class Node {
     //    (0,1,1) .+------+ (1,1,1)
     //          .' |    .'|
     // (0,1,0) +------+' (1,1,0)
-    //         |   |  |   |						y
+    //         |   |  |   | y
     //     (0,0,1).+--+---+ (1,0,1)   | z
-    //			   |.'    | .'						|/
-    // (0,0,0) +------+' (1,0,0)			+--x
+    //         |.'    | .'|/
+    // (0,0,0) +------+' (1,0,0) +--x
     //
     BoundingCube m_bounding_cube;
     int m_depth = -1;
@@ -39,9 +39,9 @@ class Node {
     Node();
     explicit Node(Node *par, PartVec part_vec, BoundingCube cube, int depth);
     auto in_bounding_box(Particle3D part) -> bool;
-    auto multipole_expansion() -> void;
-    auto calc_quadrupole() -> void;
-    auto calc_opening_angle(const Particle3D &part) -> double;
+    auto multipole_expansion(const Particle3D &part) -> Eigen::Vector3d;
+    auto calc_expansion_factors() -> void;
+    auto calc_opening_angle(const Particle3D &part) const -> double;
     auto populate_children() -> void;
     auto octa_split_bounding_box() -> SubBoundingCubes;
     auto create_sub_bounding_cube(Eigen::Vector3d origin, double cube_side_length) -> BoundingCube;

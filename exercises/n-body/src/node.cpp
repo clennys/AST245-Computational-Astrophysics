@@ -119,10 +119,9 @@ auto Node::print_cube() -> void {
     Logging::info("Summary DONE");
 }
 
-auto kronecker_delta(int i, int j) -> int { return i == j ? 1 : 0; }
-
 auto Node::calc_expansion_factors() -> void {
-		m_quadrupole = Eigen::Matrix3d::Zero();
+    static constexpr auto kronecker_delta = [](const int i, const int j) { return i == j ? 1 : 0; };
+
     m_monopole = 0;
     m_center_of_mass = Eigen::Vector3d::Zero();
 

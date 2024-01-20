@@ -33,6 +33,7 @@ auto Particle3D::calc_direct_force_with_part(const Particle3D &other_part) const
 
     const auto force_magn = System::k_non_dim_mass / (dist_norm * dist_norm * dist_norm);
 
-    // assumption: G=1
+    // assumption: G=1, and Mass=1, otherwise the mass of Particle_i would need to be multiplied
+    // here as well
     return -force_magn * diff_part;
 }
