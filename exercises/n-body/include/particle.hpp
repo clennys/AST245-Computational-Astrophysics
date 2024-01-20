@@ -12,6 +12,7 @@ class Particle3D {
     Eigen::Vector3d m_position;
     Eigen::Vector3d m_velocity;
     Eigen::Vector3d m_direct_force;
+    Eigen::Vector3d m_tree_force;
     double m_potential;
     double m_distance;
     double m_mass;

@@ -1,5 +1,8 @@
 #include "node.hpp"
 #include "logging.hpp"
+#include "system.hpp"
+
+#include <cstdlib>
 #include <iostream>
 
 Node::Node() {}
@@ -122,21 +125,28 @@ auto Node::print_cube() -> void {
 auto Node::calc_expansion_factors() -> void {
     static constexpr auto kronecker_delta = [](const int i, const int j) { return i == j ? 1 : 0; };
 
+    m_quadrupole = Eigen::Matrix3d::Zero();
     m_monopole = 0;
     m_center_of_mass = Eigen::Vector3d::Zero();
 
     for (const auto &part : m_particles) {
-        m_monopole += part.m_mass;
-        m_center_of_mass += part.m_position * part.m_mass;
+        // m_monopole += part.m_mass;
+        // m_center_of_mass += part.m_position * part.m_mass;
+        m_monopole += System::k_non_dim_mass;
+        m_center_of_mass += part.m_position;
     }
-    m_center_of_mass *= 1 / m_monopole;
+
+    m_center_of_mass /= m_monopole;
+
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             for (const auto &part : m_particles) {
                 Eigen::Vector3d d_part_com = m_center_of_mass - part.m_position;
-                quad(i, j) +=
-                    part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
-                                   kronecker_delta(i, j) * d_part_com.squaredNorm());
+                m_quadrupole(i, j) +=
+                    // part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
+                    //                kronecker_delta(i, j) * d_part_com.squaredNorm());
+                    (3 * d_part_com(i) * d_part_com(j) -
+                     kronecker_delta(i, j) * d_part_com.squaredNorm());
             }
         }
     }
@@ -144,22 +154,48 @@ auto Node::calc_expansion_factors() -> void {
 
 // TODO: (dhub) Verify formula -> In book they use radius, can we use the cube side length?
 // opening angle should be << 1
-auto Node::calc_opening_angle(const Particle3D &part) -> double {
+auto Node::calc_opening_angle(const Particle3D &part) const -> double {
     // NOTE: (dhub) Per construction this is always positive cube(1,0,0).x() >= cube(0,0,0).(x)
     double cube_side = m_bounding_cube(1, 0, 0).x() - m_bounding_cube(0, 0, 0).x();
     double dist_part_com = (part.m_position - m_center_of_mass).norm();
     return cube_side / dist_part_com;
 }
 
-auto Node::multipole_expansion(const Particle3D &part) -> double {
-		calc_expansion_factors();
+auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
+    calc_expansion_factors();
     auto dist_p_com = part.m_position - m_center_of_mass;
+    auto dist_norm = dist_p_com.norm();
 
-    auto monopole_term = m_monopole / dist_p_com.norm();
-    auto quadrupole_term = 0.5 * (dist_p_com.transpose() * m_quadrupole * dist_p_com)(0) /
-                           std::pow(dist_p_com.norm(), 5);
+    // auto monopole_term = m_monopole / dist_p_com.norm();
+    // auto quadrupole_term = 0.5 * (dist_p_com.transpose() * m_quadrupole * dist_p_com)(0) /
+    //                        std::pow(dist_p_com.norm(), 5);
 
-    return -(monopole_term + quadrupole_term);
+    Eigen::Vector3d f_monopole_vec =
+        // (m_monopole * dist_p_com * part.m_mass) / (dist_norm * dist_norm * dist_norm);
+        (m_monopole * dist_p_com) * (1 / (dist_norm * dist_norm * dist_norm));
+
+    if (f_monopole_vec.hasNaN()) {
+        Logging::err("Encountered NaN:");
+        Logging::err("{}", m_particles.size());
+        Logging::err("{}", m_monopole);
+        std::cerr << dist_p_com << '\n';
+        std::cerr << f_monopole_vec << '\n';
+        // std::cerr << part.m_position << '\n';
+        // std::cerr << m_center_of_mass << '\n';
+        // std::cerr << "DEBUGPRINT[4]: node.cpp:178: dist_norm=" << dist_norm << std::endl;
+        // std::exit(1);
+        f_monopole_vec.setZero();
+    }
+
+    const auto distnorm4inverse = 1 / (dist_norm * dist_norm * dist_norm * dist_norm);
+    const auto Qy = (m_quadrupole * dist_p_com);
+    const double yQy = dist_p_com.transpose() * Qy;
+    const Eigen::Vector3d Q_magn = ((-5. / 2.) * yQy * distnorm4inverse) * dist_p_com;
+
+    const Eigen::Vector3d f_quadrupole_vec = Qy * distnorm4inverse + Q_magn;
+
+    // return -(monopole_term + quadrupole_term);
+    return -(f_monopole_vec + f_quadrupole_vec);
 }
 
 Node::~Node() {

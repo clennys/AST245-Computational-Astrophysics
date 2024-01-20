@@ -21,34 +21,43 @@ auto TreeCode::recursive_build_tree(Node *node) -> void {
     }
 }
 
-auto TreeCode::build() -> void { 
-	Logging::info("Start Building Octree...");
-	recursive_build_tree(m_octree); 
-	Logging::info("Done.");
+auto TreeCode::build() -> void {
+    Logging::info("Start Building Octree...");
+    recursive_build_tree(m_octree);
+    Logging::info("Done.");
 }
 
-auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> double {
+auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen::Vector3d {
     if (node->calc_opening_angle(part) < m_tolerance_angle) {
         return node->multipole_expansion(part);
     }
-    double potential = 0.0;
+
+    // double potential = 0.0;
+    auto force = Eigen::Vector3d().setZero();
+
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 Node *child = node->m_children(i, j, k);
                 if (child != nullptr) {
-                    potential += recursive_tree_walk(child, part);
+                    // potential += recursive_tree_walk(child, part);
+                    force += recursive_tree_walk(child, part);
                 }
             }
         }
     }
-    return potential;
+
+    // return potential;
+    return force;
 }
 
 // TODO: For small nummer of particle use direct force calc
 auto TreeCode::tree_walk() -> void {
     for (auto &part : m_particles) {
-        part.m_treecode_potential = recursive_tree_walk(m_octree, part);
+        // part.m_treecode_potential = recursive_tree_walk(m_octree, part);
+        // Logging::info("Part: {} with potential {}", part.m_id, part.m_treecode_potential);
+        part.m_tree_force = recursive_tree_walk(m_octree, part);
+        std::cout << part.m_tree_force << '\n';
     }
 }
 
