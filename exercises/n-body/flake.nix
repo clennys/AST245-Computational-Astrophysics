@@ -47,6 +47,8 @@
 		clang-tools_16
 		clang 
 		bear
+		gdb
+		# cppcheck
       ];
 
       # Setting up the environment variables you need during

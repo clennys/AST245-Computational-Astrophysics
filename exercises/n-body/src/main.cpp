@@ -1,12 +1,17 @@
 #include "histogram.hpp"
 #include "logging.hpp"
+#include "node.hpp"
 #include "particle.hpp"
 #include "system.hpp"
+#include "treecode.hpp"
 
+#include "Eigen/Eigen"
+#include "mgl2/mgl.h"
+
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <format>
-#include <mgl2/mgl.h>
 #include <numeric>
 #include <string_view>
 
@@ -250,6 +255,71 @@ auto plot_do_steps() {
     gr.WriteJPEG("plots/density2.jpg");
 }
 
+auto tree_code() -> void {
+    BoundingCube root_cube = g_system.calc_overall_bounding_cube();
+    double tolerance_angle = 0.5;
+    TreeCode tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
+    tree.build();
+    tree.tree_walk();
+
+    mglGraph gr(0, 3000, 2000);
+
+    // set plot parameters
+    // gr.Rotate(50, 10); // Adjust for a better viewing angle
+    // gr.SetRanges(-800, 800, -800, 800, -800, 800);
+    // gr.Axis();
+    // tree.plot(gr);
+    // auto transform = g_system.transform_vectors();
+    // mglData x = std::get<0>(transform);
+    // mglData y = std::get<1>(transform);
+    // mglData z = std::get<2>(transform);
+    // gr.Dots(x,y,z, "r");
+    // gr.WriteFrame("treecode.png");
+
+    constexpr auto no_bins = 50;
+    std::vector<double> numeric_force;
+    std::vector<double> idx;
+
+    g_system.m_particles = tree.m_particles;
+    Logging::info("Creating Histogram with {} shells...", no_bins);
+    auto dir_force_hist = Histogram(no_bins, g_system, true);
+
+    for (const auto &shell : dir_force_hist.m_shells) {
+        auto val = std::accumulate(
+            shell.m_particles.begin(),
+            shell.m_particles.end(),
+            0.,
+            [](double sum, const Particle3D &part) {
+                auto norm = part.m_position.norm();
+                auto projection = part.m_position.dot(part.m_tree_force) / norm;
+                return sum + projection;
+            });
+        val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+
+        numeric_force.emplace_back(System::fit_log_to_plot(val));
+        idx.emplace_back(shell.m_lower_inc);
+    }
+
+    mglData x = idx;
+    mglData nforce = numeric_force;
+
+    gr.SetRange('x', x);
+    gr.SetRange('y', nforce);
+
+    gr.SetFontSize(2);
+    gr.SetCoor(mglLogX);
+    gr.Axis();
+
+    gr.Label('x', "Radius [l]", 0);
+    gr.Label('y', "Force", 0);
+
+    gr.Plot(x, nforce, "r.");
+    gr.AddLegend("Numeric", "r.");
+
+    gr.Legend();
+    gr.WriteJPEG("plots/forces3.jpg");
+}
+
 auto main(const int argc, const char *const argv[]) -> int {
     if (argc != 2) {
         Logging::err("Please supply a single file argument!");
@@ -258,7 +328,9 @@ auto main(const int argc, const char *const argv[]) -> int {
     // initialize the g_system variable
     g_system.init_system(argv[1]);
 
+    // ============================================================================================
     // task 1
+    // ============================================================================================
     plot_rho_step_1();
     // TODO: (aver)
     // - We still need to do a comparison between different softeining values and discuss their
@@ -266,9 +338,11 @@ auto main(const int argc, const char *const argv[]) -> int {
     // - Also explain dependence of force calculation on direct force calculation
     plot_forces_step_2();
 
+    // ============================================================================================
     // task 2
-    plot_do_steps();
-    // TODO: (aver)
+    // ============================================================================================
+    // plot_do_steps();
+    tree_code();
 
     Logging::info("Successfully quit!");
     return 0;

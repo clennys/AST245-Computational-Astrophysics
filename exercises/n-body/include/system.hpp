@@ -1,6 +1,7 @@
 #ifndef COMPASTRO_SYSTEM_H_
 #define COMPASTRO_SYSTEM_H_
 
+#include "node.hpp"
 #include "particle.hpp"
 #include "shell.hpp"
 
@@ -97,6 +98,8 @@ class System {
     [[nodiscard]] auto calc_relaxation() const -> double;
 
     auto update_relaxation() -> void;
+
+    auto calc_overall_bounding_cube() -> BoundingCube;
 
   private:
     /// Calculate runtime constants for system deployment

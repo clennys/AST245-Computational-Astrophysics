@@ -30,7 +30,7 @@ template <class... Args> auto dbg(std::format_string<Args...> fmt, Args &&...arg
     auto time = std::put_time(std::localtime(&in_time_t), "%X");
 
     std::cout << Colors::WHITE << "[ " << time << " DEBUG ]: " << Colors::RESET
-              << std::format(fmt, std::forward<Args>(args)...) << "\n";
+              << std::format(fmt, std::forward<Args>(args)...) << std::endl;
 }
 
 template <class... Args> auto info(std::format_string<Args...> fmt, Args &&...args) {
@@ -39,7 +39,7 @@ template <class... Args> auto info(std::format_string<Args...> fmt, Args &&...ar
     auto time = std::put_time(std::localtime(&in_time_t), "%X");
 
     std::cout << Colors::BRIGHT_BLUE << "[ " << time << "  INFO ]: " << Colors::RESET
-              << std::format(fmt, std::forward<Args>(args)...) << "\n";
+              << std::format(fmt, std::forward<Args>(args)...) << std::endl;
 }
 
 template <class... Args> auto warn(std::format_string<Args...> fmt, Args &&...args) {
@@ -48,7 +48,7 @@ template <class... Args> auto warn(std::format_string<Args...> fmt, Args &&...ar
     auto time = std::put_time(std::localtime(&in_time_t), "%X");
 
     std::cerr << Colors::YELLOW << "[ " << time << "  WARN ]: " << Colors::RESET
-              << std::format(fmt, std::forward<Args>(args)...) << "\n";
+              << std::format(fmt, std::forward<Args>(args)...) << std::endl;
 }
 
 template <class... Args> auto err(std::format_string<Args...> fmt, Args &&...args) {
@@ -57,7 +57,7 @@ template <class... Args> auto err(std::format_string<Args...> fmt, Args &&...arg
     auto time = std::put_time(std::localtime(&in_time_t), "%X");
 
     std::cerr << Colors::RED << "[ " << time << " ERROR ]: " << Colors::RESET
-              << std::format(fmt, std::forward<Args>(args)...) << "\n";
+              << std::format(fmt, std::forward<Args>(args)...) << std::endl;
 }
 
 } // namespace Logging
