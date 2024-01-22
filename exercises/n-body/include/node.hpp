@@ -36,18 +36,24 @@ class Node {
     double m_monopole;
     Eigen::Vector3d m_center_of_mass;
 
-    Node();
     explicit Node(Node *par, PartVec part_vec, BoundingCube cube, int depth);
+    ~Node();
+
+    Node() = delete;
+    Node(const Node &) = delete;
+    Node &operator=(const Node &) = delete;
+    Node(Node &&) = delete;
+    Node &operator=(Node &&) = delete;
+
     auto in_bounding_box(Particle3D part) -> bool;
     auto multipole_expansion(const Particle3D &part) -> Eigen::Vector3d;
     auto calc_expansion_factors() -> void;
     auto calc_opening_angle(const Particle3D &part) const -> double;
-    auto populate_children() -> void;
+    auto populate_children() -> int;
     auto octa_split_bounding_box() -> SubBoundingCubes;
     auto create_sub_bounding_cube(Eigen::Vector3d origin, double cube_side_length) -> BoundingCube;
     auto in_bounding_box(const BoundingCube cube, const Particle3D &part) -> bool;
     auto print_cube() -> void;
-    ~Node();
 };
 
 #endif // ! NODE_H_

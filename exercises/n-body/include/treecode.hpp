@@ -9,10 +9,11 @@ class TreeCode {
     Node *m_octree;
     BoundingCube m_bounding_cube_root;
     PartVec m_particles;
-    // int m_height = -1;
+    int m_height = -1;
     double m_tolerance_angle;
 
-    TreeCode(BoundingCube root_cube, PartVec particles, double tolerance_angle);
+    explicit TreeCode(BoundingCube root_cube, PartVec particles, double tolerance_angle);
+    ~TreeCode();
     auto build() -> void;
     auto recursive_build_tree(Node *root) -> void;
     auto tree_walk() -> void;

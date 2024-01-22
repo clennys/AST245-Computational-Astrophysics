@@ -2,10 +2,10 @@
 #include "logging.hpp"
 #include "system.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
-
-Node::Node() {}
 
 Node::Node(Node *par, PartVec part_vec, BoundingCube cube, int depth)
     : m_parent(par), m_particles(part_vec), m_bounding_cube(cube), m_depth(depth) {
@@ -85,7 +85,8 @@ auto Node::in_bounding_box(const BoundingCube cube, const Particle3D &part) -> b
     return (x_min <= x && x <= x_max) && (y_min <= y && y <= y_max) && (z_min <= z && z <= z_max);
 }
 
-auto Node::populate_children() -> void {
+auto Node::populate_children() -> int {
+    auto max_depth = 0;
     SubBoundingCubes new_bounding_cubes = octa_split_bounding_box();
     for (const auto &part : m_particles) {
         // NOTE: Particles only fall in single sub bounding cube, there are some on the boundary
@@ -98,6 +99,7 @@ auto Node::populate_children() -> void {
                             PartVec child_part = {part};
                             m_children(i, j, k) = new Node(
                                 this, child_part, new_bounding_cubes(i, j, k), m_depth + 1);
+                            max_depth = std::max(max_depth, m_depth + 1);
                         } else {
                             m_children(i, j, k)->m_particles.push_back(part);
                         }
@@ -107,9 +109,9 @@ auto Node::populate_children() -> void {
             }
         }
     }
+    return max_depth;
 }
 auto Node::print_cube() -> void {
-
     Logging::info("Printing summary");
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
@@ -119,7 +121,6 @@ auto Node::print_cube() -> void {
             }
         }
     }
-    Logging::info("Summary DONE");
 }
 
 auto Node::calc_expansion_factors() -> void {
@@ -158,34 +159,20 @@ auto Node::calc_opening_angle(const Particle3D &part) const -> double {
     // NOTE: (dhub) Per construction this is always positive cube(1,0,0).x() >= cube(0,0,0).(x)
     double cube_side = m_bounding_cube(1, 0, 0).x() - m_bounding_cube(0, 0, 0).x();
     double dist_part_com = (part.m_position - m_center_of_mass).norm();
-    return cube_side / dist_part_com;
+    // auto cube_side / dist_part_com;
+    return std::abs(std::atan2(cube_side, dist_part_com));
 }
 
 auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
-    calc_expansion_factors();
-    auto dist_p_com = part.m_position - m_center_of_mass;
+    this->calc_expansion_factors();
+    auto dist_p_com = part.m_position - this->m_center_of_mass;
     auto dist_norm = dist_p_com.norm();
-
-    // auto monopole_term = m_monopole / dist_p_com.norm();
-    // auto quadrupole_term = 0.5 * (dist_p_com.transpose() * m_quadrupole * dist_p_com)(0) /
-    //                        std::pow(dist_p_com.norm(), 5);
 
     Eigen::Vector3d f_monopole_vec =
         // (m_monopole * dist_p_com * part.m_mass) / (dist_norm * dist_norm * dist_norm);
-        (m_monopole * dist_p_com) * (1 / (dist_norm * dist_norm * dist_norm));
+        -(m_monopole * dist_p_com) / (dist_norm * dist_norm * dist_norm);
 
-    if (f_monopole_vec.hasNaN()) {
-        Logging::err("Encountered NaN:");
-        Logging::err("{}", m_particles.size());
-        Logging::err("{}", m_monopole);
-        std::cerr << dist_p_com << '\n';
-        std::cerr << f_monopole_vec << '\n';
-        // std::cerr << part.m_position << '\n';
-        // std::cerr << m_center_of_mass << '\n';
-        // std::cerr << "DEBUGPRINT[4]: node.cpp:178: dist_norm=" << dist_norm << std::endl;
-        // std::exit(1);
-        f_monopole_vec.setZero();
-    }
+    assert(not f_monopole_vec.hasNaN());
 
     const auto distnorm4inverse = 1 / (dist_norm * dist_norm * dist_norm * dist_norm);
     const auto Qy = (m_quadrupole * dist_p_com);
@@ -194,8 +181,7 @@ auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
 
     const Eigen::Vector3d f_quadrupole_vec = Qy * distnorm4inverse + Q_magn;
 
-    // return -(monopole_term + quadrupole_term);
-    return -(f_monopole_vec + f_quadrupole_vec);
+    return f_monopole_vec + f_quadrupole_vec;
 }
 
 Node::~Node() {
