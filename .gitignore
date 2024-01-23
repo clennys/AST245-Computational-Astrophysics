@@ -1,4 +1,8 @@
 build/
 compile_commands.json
-exercises/n-body/README.pdf
+README.pdf
 plots
+indent.log
+
+# excluding
+!**/figures/plots/
