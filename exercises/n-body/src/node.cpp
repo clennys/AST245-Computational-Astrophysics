@@ -185,12 +185,12 @@ auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
 }
 
 Node::~Node() {
-    Logging::dbg("Destructor of Node called");
+    // Logging::dbg("Destructor of Node called");
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 if (m_children(i, j, k)) {
-                    Logging::dbg("children deleted");
+                    // Logging::dbg("children deleted");
                     delete m_children(i, j, k);
                 }
             }

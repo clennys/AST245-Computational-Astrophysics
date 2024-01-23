@@ -40,7 +40,8 @@ auto plot_rho_step_1() {
         auto hern_rho = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) / 2);
 
         // NOTE: (aver) \lambda = number of shells on average throughout all bins
-        const auto rho_err = std_dev * System::k_non_dim_mass / shell.m_volume;
+        const auto rho_err = std_dev / shell.m_volume;
+        // const auto rho_err = std_dev * shell.m_mass / shell.m_volume;
 
         // const auto k_no_parts_in_shell = shell.m_mass / Particle3D::km_non_dim_mass;
         // // NOTE: (aver) \lambda = number of shells in current bin
@@ -52,7 +53,6 @@ auto plot_rho_step_1() {
         // const auto rho_err =
         //     std::sqrt(no_parts_in_hern) * Particle3D::km_non_dim_mass / k_shell_volume;
 
-        // index.emplace_back(static_cast<int>(shell.m_index));
         index.emplace_back(shell.m_lower_inc);
 
         hernquist_dens.emplace_back(System::fit_log_to_plot(hern_rho));
@@ -74,29 +74,29 @@ auto plot_rho_step_1() {
 
     // set plot parameters
     mglGraph gr(0, 3000, 2000);
-
     gr.SetRange('x', x);
     gr.SetRange('y', y_min, y_max);
-
     gr.SetFontSize(2);
-    gr.SetCoor(mglLogLog);
     gr.Axis();
+    gr.SetCoor(mglLogLog);
 
-    gr.Label('x', "Radius [l]", 0);
-    gr.Label('y', "Density [m]/[l]^3", 0);
+    gr.Label('x', "Radius", 0);
+    gr.Label('y', "Density", 0);
 
     gr.Plot(x, y_hern, "b");
     gr.AddLegend("Hernquist Density Profile", "b");
 
-    gr.Plot(x, y_num, "r .");
-    gr.AddLegend("Numeric Density Profile", "r .");
+    gr.Plot(x, y_num, "r.");
+    gr.AddLegend("Numeric Density Profile", "r.");
 
     gr.Error(x, y_num, y_err, "q");
     gr.AddLegend("Poissonian Error", "q");
 
+    // finalize image
     gr.Legend();
     gr.WriteJPEG("plots/hernquist.jpg");
-    // gr.WritePNG("plots/hernquist.png");
+    gr.WritePNG("plots/hernquist.png");
+
     Logging::info("Hernquist plotted.");
 }
 
@@ -104,9 +104,16 @@ auto plot_forces_step_2() {
     constexpr auto no_bins = 50;
 
 // This should be a one time calculation and then save it in the System class
-#if 0
+#if 1
     auto mean_inter_idst = g_system.precalc_mean_inter_part_dist();
-    Logging::info("Mean inter particle distance: {}", mean_inter_idst);
+    Logging::info("Mean inter-particle distance: {}", mean_inter_idst);
+
+    auto analytic_mipd = (((4 * std::numbers::pi) / 3) * g_system.m_max_rad * g_system.m_max_rad *
+                          g_system.m_max_rad);
+    analytic_mipd /= g_system.system_int_size();
+    analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
+
+    Logging::info("Analytic MIPD: {}", analytic_mipd);
 #endif
 
     std::vector<double> analytic_force;
@@ -176,7 +183,7 @@ auto plot_forces_step_2() {
 
     gr.Legend();
     gr.WriteJPEG("plots/forces.jpg");
-    // gr.WritePNG("plots/forces.png");
+    gr.WritePNG("plots/forces.png");
 }
 
 auto plot_do_steps() {
@@ -235,7 +242,7 @@ auto plot_do_steps() {
 
     gr.Legend();
     gr.WriteJPEG("plots/forces2.jpg");
-    // gr.WritePNG("plots/forces2.png");
+    gr.WritePNG("plots/forces2.png");
 
     gr.ClearFrame();
     gr.ClearLegend();
@@ -253,6 +260,7 @@ auto plot_do_steps() {
 
     gr.Legend();
     gr.WriteJPEG("plots/density2.jpg");
+    gr.WritePNG("plots/density2.png");
 }
 
 auto tree_code() -> void {
@@ -260,22 +268,23 @@ auto tree_code() -> void {
     double tolerance_angle = 0.5;
     TreeCode tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
     tree.build();
-    tree.tree_walk();
+    // tree.tree_walk();
 
     mglGraph gr(0, 3000, 2000);
 
     // set plot parameters
-    // gr.Rotate(50, 10); // Adjust for a better viewing angle
-    // gr.SetRanges(-800, 800, -800, 800, -800, 800);
-    // gr.Axis();
-    // tree.plot(gr);
-    // auto transform = g_system.transform_vectors();
-    // mglData x = std::get<0>(transform);
-    // mglData y = std::get<1>(transform);
-    // mglData z = std::get<2>(transform);
-    // gr.Dots(x,y,z, "r");
-    // gr.WriteFrame("treecode.png");
+    gr.Rotate(50, 10); // Adjust for a better viewing angle
+    gr.SetRanges(-800, 800, -800, 800, -800, 800);
+    gr.Axis();
+    tree.plot(gr);
+    auto transform = g_system.transform_vectors();
+    mglData x = std::get<0>(transform);
+    mglData y = std::get<1>(transform);
+    mglData z = std::get<2>(transform);
+    gr.Dots(x, y, z, "r");
+    gr.WriteFrame("plots/treecode.png");
 
+    /*
     constexpr auto no_bins = 50;
     std::vector<double> numeric_force;
     std::vector<double> idx;
@@ -285,15 +294,15 @@ auto tree_code() -> void {
     auto dir_force_hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : dir_force_hist.m_shells) {
-        auto val = std::accumulate(
-            shell.m_particles.begin(),
-            shell.m_particles.end(),
-            0.,
-            [](double sum, const Particle3D &part) {
-                auto norm = part.m_position.norm();
-                auto projection = part.m_position.dot(part.m_tree_force) / norm;
-                return sum + projection;
-            });
+        auto val = std::accumulate(shell.m_particles.begin(),
+                                   shell.m_particles.end(),
+                                   0.,
+                                   [](double sum, const Particle3D &part) {
+                                       auto norm = part.m_position.norm();
+                                       auto projection =
+                                           part.m_position.dot(part.m_tree_force) / norm;
+                                       return sum + projection;
+                                   });
         val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
 
         numeric_force.emplace_back(System::fit_log_to_plot(val));
@@ -318,6 +327,8 @@ auto tree_code() -> void {
 
     gr.Legend();
     gr.WriteJPEG("plots/forces3.jpg");
+    gr.WritePNG("plots/forces3.png");
+    */
 }
 
 auto main(const int argc, const char *const argv[]) -> int {
@@ -342,7 +353,7 @@ auto main(const int argc, const char *const argv[]) -> int {
     // task 2
     // ============================================================================================
     // plot_do_steps();
-    tree_code();
+    // tree_code();
 
     Logging::info("Successfully quit!");
     return 0;

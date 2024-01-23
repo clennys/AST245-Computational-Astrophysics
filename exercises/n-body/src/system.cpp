@@ -195,6 +195,7 @@ auto System::newton_force(const double rad) const -> double {
 auto System::calc_direct_initial_force() -> void {
     Logging::info("Calculating initial direct forces...");
 #if 1
+    // with omp the 'slower' comparison based loop is much faster with omp (~2s)
 #pragma omp parallel for
     for (uint64_t i = 0; i < m_particles.size(); ++i) {
         // reset on each `i` change
@@ -211,7 +212,8 @@ auto System::calc_direct_initial_force() -> void {
         m_particles[i].update_direct_force(sum_force_inter_part);
     }
 #else
-    // No perf gain in parallelizing this ...
+    // No perf gain in parallelizing this ... with omp
+    // On a single thread though, proves much more performant (~8 seconds)
     for (uint i = 0; i < m_particles.size(); ++i) {
         for (uint j = i + 1; j < m_particles.size(); ++j) {
             const auto force_vec = m_particles[i].calc_direct_force_with_part(m_particles[j]);

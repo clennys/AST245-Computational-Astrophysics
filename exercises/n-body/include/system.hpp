@@ -87,6 +87,11 @@ class System {
     auto calc_direct_initial_force() -> void;
 
     /// Helper method to adjust a radius to a bin size
+    ///
+    /// The ratio is created by `m_min_rad` and `m_max_rad`.
+    /// The exponent scales the value to between 0 and 1., by dividing `val` and `no_bins`.
+    /// The multiplication of the value with `m_min_rad` guarantees that the value falls in to the
+    /// designated range.
     [[nodiscard]] auto convert_lin_to_log(const int no_bins, const double val) const -> double;
 
     /// Helper method to add a minimal epsilon to values to circumvent log(0) errors
