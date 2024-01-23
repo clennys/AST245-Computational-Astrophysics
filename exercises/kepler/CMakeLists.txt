@@ -15,7 +15,7 @@ find_package(fmt)
 
 include_directories(SYSTEM
     ${PYTHON_INCLUDE_DIRS}
-    "/usr/include/python3.11"
+    "/usr/include/python3.12"
     "../../libs/matplotlib-cpp"
 )
 
@@ -65,5 +65,5 @@ target_link_libraries(${PROJECT_NAME}
     fmt::fmt
     Eigen3::Eigen
     ${PythonLibs_LIBRARIES}
-    python3.11
+    python3.12
 )
