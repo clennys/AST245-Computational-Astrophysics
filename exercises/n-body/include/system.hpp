@@ -12,10 +12,14 @@ class System {
     //=============================================================================================
     // Static variables and constants
     //=============================================================================================
+    /// Graviational Constant in pc * (km/s)^2 / M_\odot 
+    static constexpr double k_G = 4.3009172706e-3;
+    /// Precalculated Mean inter-particle distance
     static constexpr double k_mean_inter_dist = 4.023775510528517;
     /// Non dimensional particle mass of one
     static constexpr double k_non_dim_mass = 1.;
-    // static constexpr double km_non_dim_mass = 92.4259;
+    /// Dimensional Mass per particle
+    static constexpr double k_dim_mass = 92.4259;
     /// Softening to be applied in Force calculcation
     static double s_softening;
 

@@ -21,7 +21,7 @@
 double System::s_softening = 0.;
 
 auto System::init_system(const std::string_view &path_name) -> void {
-
+    Logging::info("==============================================================================");
     Logging::info("Initializing System with file: {}", path_name);
 
     auto particles_opt = Data::read_data(path_name);
@@ -38,19 +38,28 @@ auto System::init_system(const std::string_view &path_name) -> void {
 
     update_half_mass_radius(hist.m_shells);
     update_scale_length();
-    update_relaxation();
+    // Relaxation under constraints is not needed
+    // this->update_relaxation();
 
     // System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
     //                                       g_system.m_scale_length * g_system.m_scale_length));
-    System::s_softening =
-        -1 /
-        (std::sqrt(m_max_rad * m_max_rad + System::k_mean_inter_dist * System::k_mean_inter_dist));
+
+    /* In collisionless simulations the choice of softening kernel and softening
+    length is a compromise between maximizing the smoothness of the force-
+    field and minimizing the degradation of the spatial resolution caused by the
+    softening. Despite its popularity, the choice (2.226) of S is not optimal in
+    this sense, because the density of a Plummer sphere falls off too slowly with
+    radius */
+    System::s_softening = -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
+                                          System::k_mean_inter_dist * System::k_mean_inter_dist));
+
+    // add final division
     System::s_softening /= 20;
 
     Logging::info("Total mass of system:       {:<12}", m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", m_half_mass_rad);
     Logging::info("Scaling length of system:   {:>12.10f}", m_scale_length);
-    Logging::info("Relaxation time of system:  {:>12.10f}", m_relaxation);
+    // Logging::info("Relaxation time of system:  {:>12.10f}", m_relaxation);
     Logging::info("Avg Inter-particle dist:    {:>12.10f}", System::k_mean_inter_dist);
     Logging::info("Softening of system:        {:>12.10f}", System::s_softening);
     Logging::info("");

@@ -331,6 +331,39 @@ auto tree_code() -> void {
     */
 }
 
+/// Calculate timescales with remultiplied factors and units
+auto calc_real_relaxation() {
+    constexpr auto parsec_to_km_factor = 3.0857e+13;
+    Logging::info("==============================================================================");
+    Logging::info("Calculating relaxation timescale");
+
+    auto rel_hist = Histogram(100'000, g_system);
+    for (auto &shell : rel_hist.m_shells) {
+        shell.m_mass = shell.shell_int_size() * System::k_dim_mass;
+        shell.update_density();
+    }
+
+    const auto r_hm = g_system.calc_half_mass_radius(rel_hist.m_shells);
+    const auto M = g_system.system_int_size() * System::k_dim_mass;
+    Logging::info("Half Mass Radius at     {} pc", r_hm);
+
+    // WARN: (aver) What to do? Use G=1 or use the real unit of G?
+    const auto v_c = std::sqrt(System::k_G * M * 0.5 / r_hm);
+    Logging::info("Circular Velocity at    {} km / s", v_c);
+
+    // const auto t_cross = r_hm / v_c;
+    // Logging::info("Crossing Timescale at   {} pc / (km/s)", t_cross);
+    const auto t_cross_km = (r_hm * parsec_to_km_factor) / v_c;
+    const auto t_cross_yr = t_cross_km / (60. * 60. * 24. * 365.25);
+    Logging::info("Crossing Timescale at   {} yr", t_cross_yr);
+
+    const auto t_relax =
+        g_system.system_int_size() / (8 * std::log(g_system.system_int_size()) * t_cross_yr);
+    Logging::info("Relaxation Timescale at {} yr", t_relax);
+
+    Logging::info("==============================================================================");
+}
+
 auto main(const int argc, const char *const argv[]) -> int {
     if (argc != 2) {
         Logging::err("Please supply a single file argument!");
@@ -355,6 +388,7 @@ auto main(const int argc, const char *const argv[]) -> int {
     // plot_do_steps();
     // tree_code();
 
+    calc_real_relaxation();
     Logging::info("Successfully quit!");
     return 0;
 }
