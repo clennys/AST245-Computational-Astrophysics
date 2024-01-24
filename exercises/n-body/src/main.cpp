@@ -104,7 +104,7 @@ auto plot_forces_step_2() {
     constexpr auto no_bins = 50;
 
 // This should be a one time calculation and then save it in the System class
-#if 1
+#if 0
     auto mean_inter_idst = g_system.precalc_mean_inter_part_dist();
     Logging::info("Mean inter-particle distance: {}", mean_inter_idst);
 
@@ -117,8 +117,6 @@ auto plot_forces_step_2() {
 #endif
 
     std::vector<double> analytic_force;
-    std::vector<double> direct_force;
-    std::vector<double> idx;
 
     // TODO: (dhub) Extract to System Class
 
@@ -128,62 +126,67 @@ auto plot_forces_step_2() {
         analytic_force.emplace_back(System::fit_log_to_plot(val));
     }
 
-    // Initialize forces, with direct calculation
-    g_system.calc_direct_initial_force();
-
-    auto dir_force_hist = Histogram(no_bins, g_system, true);
-
-    for (const auto &shell : dir_force_hist.m_shells) {
-
-        // TODO: (aver) we need to convert vector force to the center of the spherical distribution
-        auto val = std::accumulate(shell.m_particles.begin(),
-                                   shell.m_particles.end(),
-                                   0.,
-                                   [](double sum, const Particle3D &part) {
-                                       auto norm = part.m_position.norm();
-                                       auto projection =
-                                           part.m_position.dot(part.m_direct_force) / norm;
-                                       return sum + projection;
-                                   });
-        val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
-
-        direct_force.emplace_back(System::fit_log_to_plot(val));
-        // direct_force.emplace_back(val);
-        idx.emplace_back(shell.m_lower_inc);
-
-        // Logging::info("id: {}, {}", shell.m_lower_inc, val);
-        // Logging::info(" {} particles in shell {}", shell.m_particles.size(), shell.m_index);
-    }
-
-    mglData x = idx;
     mglData aforce = analytic_force;
-    mglData nforce = direct_force;
 
-    auto y_min = std::min(aforce.Minimal(), nforce.Minimal());
-    auto y_max = std::max(aforce.Maximal(), nforce.Maximal());
+    for (const auto &div : System::softening_divisors) {
+        std::vector<double> direct_force;
+        std::vector<double> idx;
 
-    mglGraph gr(0, 3000, 2000);
+        System::s_softening = System::s_softening_length / div;
+        // Initialize forces, with direct calculation
+        g_system.calc_direct_initial_force();
 
-    gr.SetRange('x', x);
-    gr.SetRange('y', y_min, y_max);
-    // gr.SetRange('y', nforce);
+        auto dir_force_hist = Histogram(no_bins, g_system, true);
 
-    gr.SetFontSize(2);
-    gr.SetCoor(mglLogX);
-    gr.Axis();
+        for (const auto &shell : dir_force_hist.m_shells) {
 
-    gr.Label('x', "Radius [l]", 0);
-    gr.Label('y', "Force", 0);
+            // TODO: (aver) we need to convert vector force to the center of the spherical
+            // distribution
+            auto val = std::accumulate(shell.m_particles.begin(),
+                                       shell.m_particles.end(),
+                                       0.,
+                                       [](double sum, const Particle3D &part) {
+                                           auto norm = part.m_position.norm();
+                                           auto projection =
+                                               part.m_position.dot(part.m_direct_force) / norm;
+                                           return sum + projection;
+                                       });
+            val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
 
-    gr.Plot(x, aforce, "b");
-    gr.AddLegend("Analytic", "b");
+            direct_force.emplace_back(System::fit_log_to_plot(val));
+            idx.emplace_back(shell.m_lower_inc);
 
-    gr.Plot(x, nforce, "r.");
-    gr.AddLegend("Numeric", "r.");
+        }
 
-    gr.Legend();
-    gr.WriteJPEG("plots/forces.jpg");
-    gr.WritePNG("plots/forces.png");
+        mglData x = idx;
+        mglData nforce = direct_force;
+
+        auto y_min = std::min(aforce.Minimal(), nforce.Minimal());
+        auto y_max = std::max(aforce.Maximal(), nforce.Maximal());
+
+        mglGraph gr(0, 3000, 2000);
+
+        gr.SetRange('x', x);
+        gr.SetRange('y', y_min, y_max);
+        // gr.SetRange('y', nforce);
+
+        gr.SetFontSize(2);
+        gr.SetCoor(mglLogX);
+        gr.Axis();
+
+        gr.Label('x', "Radius [l]", 0);
+        gr.Label('y', "Force", 0);
+
+        gr.Plot(x, aforce, "b");
+        gr.AddLegend("Analytic", "b");
+
+        gr.Plot(x, nforce, "r.");
+        gr.AddLegend("Numeric", "r.");
+
+        gr.Legend();
+        gr.WriteJPEG(std::format("plots/forces_{}.jpg", div).c_str());
+        // gr.WritePNG(std::format("plots/forces_{}.png", div).c_str());
+    }
 }
 
 auto plot_do_steps() {

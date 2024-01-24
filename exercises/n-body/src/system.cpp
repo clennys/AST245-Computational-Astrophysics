@@ -19,6 +19,7 @@
 
 // set default softening
 double System::s_softening = 0.;
+double System::s_softening_length = 0.;
 
 auto System::init_system(const std::string_view &path_name) -> void {
     Logging::info("==============================================================================");
@@ -50,7 +51,7 @@ auto System::init_system(const std::string_view &path_name) -> void {
     softening. Despite its popularity, the choice (2.226) of S is not optimal in
     this sense, because the density of a Plummer sphere falls off too slowly with
     radius */
-    System::s_softening = -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
+    System::s_softening_length = -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
                                           System::k_mean_inter_dist * System::k_mean_inter_dist));
 
     // add final division
