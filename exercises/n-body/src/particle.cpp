@@ -31,7 +31,8 @@ auto Particle3D::calc_direct_force_with_part(const Particle3D &other_part) const
     const auto dist_norm =
         std::sqrt(diff_part.squaredNorm() + (System::s_softening * System::s_softening));
 
-    const auto force_magn = System::k_non_dim_mass / (dist_norm * dist_norm * dist_norm);
+    const auto force_magn =
+        (this->m_mass * other_part.m_mass) / (dist_norm * dist_norm * dist_norm);
 
     // assumption: G=1, and Mass=1, otherwise the mass of Particle_i would need to be multiplied
     // here as well

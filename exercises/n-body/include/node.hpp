@@ -14,12 +14,12 @@ using SubCubesNodes = Eigen::Tensor<Node *, 3>;
 class Node {
   public:
     // parent pointer
-    Node *m_parent;
+    Node *m_parent = nullptr;
     // array of children (8)
     SubCubesNodes m_children;
 
     // particles in node
-    PartVec m_particles;
+    PartVec m_particles = {};
 
     // Bounding cub index (x,y,z)
     //    (0,1,1) .+------+ (1,1,1)
@@ -33,7 +33,7 @@ class Node {
     BoundingCube m_bounding_cube;
     int m_depth = -1;
     Eigen::Matrix3d m_quadrupole;
-    double m_monopole;
+    double m_monopole = 0;
     Eigen::Vector3d m_center_of_mass;
 
     explicit Node(Node *par, PartVec part_vec, BoundingCube cube, int depth);

@@ -39,8 +39,7 @@ Histogram::Histogram(const int no_bins, const System &p_system, bool do_log) {
         if (shell_it != m_shells.end()) {
             // Logging::dbg(std::format("Working on shell: {}", it->m_index));
             shell_it->m_particles.emplace_back(part);
-            // shell_it->m_mass += part.mass;
-            shell_it->m_mass += System::k_non_dim_mass;
+            shell_it->m_mass += part.m_mass;
         } else {
             // handle the case, where a particle is not placed into any of the shells...
             Logging::err(

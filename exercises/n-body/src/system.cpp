@@ -86,7 +86,7 @@ auto System::precalc_consts() -> void {
     for (const auto &part : m_particles) {
         update_min_rad(part.m_distance);
         update_max_rad(part.m_distance);
-        m_total_mass += System::k_non_dim_mass;
+        m_total_mass += part.m_mass;
     }
     // WARN: (aver) We need min rad to be larger than 0, otherwise many following calculations have
     // a divide by 0!
@@ -159,10 +159,7 @@ auto System::calc_total_mass() const -> double {
 
     auto total_mass = std::accumulate(
         m_particles.begin(), m_particles.end(), 0., [&](double sum, const Particle3D &part) {
-            // return sum + part.mass;
-
-            (void)part;
-            return sum + System::k_non_dim_mass;
+            return sum + part.m_mass;
         });
     Logging::info("Total mass of system: {}", m_total_mass);
 
@@ -204,8 +201,7 @@ auto System::newton_force(const double rad) const -> double {
     // auto M_r = m_total_mass * (rad * rad) / ((rad + m_scale_length) * (rad + m_scale_length));
     // return -M_r / (rad * rad);
 
-    return -m_total_mass * System::k_non_dim_mass /
-           ((rad + m_scale_length) * (rad + m_scale_length));
+    return -m_total_mass * System::k_dim_mass / ((rad + m_scale_length) * (rad + m_scale_length));
 }
 
 auto System::calc_direct_initial_force() -> void {
@@ -243,55 +239,36 @@ auto System::calc_direct_initial_force() -> void {
 }
 
 auto System::solver_do_step(const double delta_time) -> void {
-
-#pragma omp parallel for
+#pragma omp parallel for shared(m_particles)
     for (auto &part : m_particles) {
-        /*
-                // First leap, get mid velocity
-                const auto velocity_mid = part.m_velocity + part.m_direct_force * delta_time * .5;
-                // Update position for force calculation
-                part.m_position += velocity_mid * delta_time;
-        */
+
+        // First leap, get mid velocity
+        const auto velocity_mid =
+            part.m_velocity + (part.m_direct_force / part.m_mass) * delta_time * .5;
+        // Update position for force calculation
+        part.m_position += velocity_mid * delta_time;
+
         // r half
-        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+        // part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
 
         auto force_new = Eigen::Vector3d().setZero();
         // update forces at new position
-
-#if 0
-#pragma omp parallel private(part)
-        {
-            auto local_force = Eigen::Vector3d().setZero();
-
-#pragma omp for
-            for (size_t i = 0; i < m_particles.size(); ++i) {
-                auto other_part = m_particles[i];
-                if (other_part.m_id == part.m_id)
-                    continue;
-
-                local_force += part.calc_direct_force_with_part(other_part);
-            }
-#pragma omp critical
-            force_new += local_force;
-        }
-#else
         for (const auto &other : m_particles) {
             if (other.m_id == part.m_id)
                 continue;
             force_new += part.calc_direct_force_with_part(other);
         }
-#endif
 
         // update the force
         // part.update_direct_force(force_new);
         part.m_direct_force = force_new;
 
         // set new velocity, completing leap-frog
-        // part.m_velocity = velocity_mid + part.m_direct_force * delta_time * .5;
+        part.m_velocity = velocity_mid + (part.m_direct_force / part.m_mass) * delta_time * .5;
 
         // v n+1
-        part.m_velocity = part.m_velocity + delta_time * part.m_direct_force;
-        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+        // part.m_velocity = part.m_velocity + delta_time * (part.m_direct_force/part.m_mass);
+        // part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
     }
 }
 

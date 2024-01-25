@@ -131,10 +131,8 @@ auto Node::calc_expansion_factors() -> void {
     m_center_of_mass = Eigen::Vector3d::Zero();
 
     for (const auto &part : m_particles) {
-        // m_monopole += part.m_mass;
-        // m_center_of_mass += part.m_position * part.m_mass;
-        m_monopole += System::k_non_dim_mass;
-        m_center_of_mass += part.m_position;
+        m_monopole += part.m_mass;
+        m_center_of_mass += part.m_position * part.m_mass;
     }
 
     m_center_of_mass /= m_monopole;
@@ -144,10 +142,8 @@ auto Node::calc_expansion_factors() -> void {
             for (const auto &part : m_particles) {
                 Eigen::Vector3d d_part_com = m_center_of_mass - part.m_position;
                 m_quadrupole(i, j) +=
-                    // part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
-                    //                kronecker_delta(i, j) * d_part_com.squaredNorm());
-                    (3 * d_part_com(i) * d_part_com(j) -
-                     kronecker_delta(i, j) * d_part_com.squaredNorm());
+                    part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
+                                   kronecker_delta(i, j) * d_part_com.squaredNorm());
             }
         }
     }

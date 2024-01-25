@@ -33,7 +33,7 @@ auto plot_rho_step_1() {
     // set minimal radius to something else than 0, otherwise errors ensue
 
     auto sum = 0.;
-    Histogram hist(no_bins, g_system, true);
+    auto hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : hist.m_shells) {
 
@@ -62,7 +62,6 @@ auto plot_rho_step_1() {
         sum += shell.m_mass;
     }
 
-    assert(sum == 50010 || sum == 1001);
 
     mglData x = index;
     mglData y_hern = hernquist_dens;
@@ -193,11 +192,11 @@ auto plot_do_steps() {
     System::s_softening = System::s_softening_length / 200;
     g_system.calc_direct_initial_force();
 
-    const auto kTime = g_system.m_t_cross * 5;
-    constexpr auto kDeltaTime = 0.0000001;
-    // constexpr auto kFinalTime = kTime / kDeltaTime;
+    constexpr auto tau = 0.01;
+    const auto kTime = g_system.m_t_cross * 3;
+    const auto kDeltaTime = tau * g_system.m_t_cross;
 
-    for (double t = 0; t < kTime; t += kDeltaTime) {
+    for (double t = 0.; t < kTime; t += kDeltaTime) {
         Logging::info("t = {}", t);
         g_system.solver_do_step(kDeltaTime);
     }
@@ -370,6 +369,75 @@ auto calc_real_relaxation() {
     Logging::info("==============================================================================");
 }
 
+auto plot_gif_steps() {
+    System::s_softening = System::s_softening_length / 200;
+    g_system.calc_direct_initial_force();
+
+    mglGraph gr(0, 1440, 900);
+    gr.StartGIF("steps_forces.gif");
+
+    constexpr auto no_bins = 50;
+
+    constexpr auto tau = 0.01;
+    const auto kTime = g_system.m_t_cross * 5;
+    const auto kDeltaTime = tau * g_system.m_t_cross;
+
+    for (double t = 0.; t < kTime; t += kDeltaTime) {
+        gr.NewFrame();
+
+        std::vector<double> numeric_dens;
+        std::vector<double> direct_force;
+        std::vector<double> idx;
+
+        auto dir_force_hist = Histogram(no_bins, g_system, true);
+
+        for (const auto &shell : dir_force_hist.m_shells) {
+            auto val = std::accumulate(shell.m_particles.begin(),
+                                       shell.m_particles.end(),
+                                       0.,
+                                       [](double sum, const Particle3D &part) {
+                                           auto norm = part.m_position.norm();
+                                           auto projection =
+                                               part.m_position.dot(part.m_direct_force) / norm;
+                                           return sum + projection;
+                                       });
+            val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+
+            numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
+            direct_force.emplace_back(System::fit_log_to_plot(val));
+            idx.emplace_back(shell.m_lower_inc);
+        }
+
+        Logging::info("t = {}", t);
+        g_system.solver_do_step(kDeltaTime);
+
+        mglData x = idx;
+        mglData nforce = direct_force;
+        mglData ndens = numeric_dens;
+
+        gr.SetRange('x', x);
+        gr.SetRange('y', nforce);
+
+        gr.SetFontSize(2);
+        gr.SetCoor(mglLogX);
+        gr.Axis();
+
+        gr.Label('x', "Radius [l]", 0);
+        gr.Label('y', "Force", 0);
+
+        gr.Plot(x, nforce, "r.");
+        gr.AddLegend("Numeric", "r.");
+
+        // Add a text box at the top right
+        gr.Title(std::format("t: {}", t).c_str());
+
+        gr.Legend();
+
+        gr.EndFrame();
+    }
+
+    gr.CloseGIF();
+}
 auto main(const int argc, const char *const argv[]) -> int {
     if (argc != 2) {
         Logging::err("Please supply a single file argument!");
@@ -381,20 +449,22 @@ auto main(const int argc, const char *const argv[]) -> int {
     // ============================================================================================
     // task 1
     // ============================================================================================
-    plot_rho_step_1();
+    // plot_rho_step_1();
     // TODO: (aver)
     // - We still need to do a comparison between different softeining values and discuss their
     //      significance
     // - Also explain dependence of force calculation on direct force calculation
-    plot_forces_step_2();
+    // plot_forces_step_2();
 
     // ============================================================================================
     // task 2
     // ============================================================================================
+
     // plot_do_steps();
     // tree_code();
+    plot_gif_steps();
 
-    calc_real_relaxation();
+    // calc_real_relaxation();
     Logging::info("Successfully quit!");
     return 0;
 }

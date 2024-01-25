@@ -13,12 +13,12 @@ class Particle3D {
     Eigen::Vector3d m_velocity;
     Eigen::Vector3d m_direct_force;
     Eigen::Vector3d m_tree_force;
-    double m_potential;
-    double m_distance;
-    double m_mass;
-   // TODO: (dhub) Change input, consider removing
-    double m_softening;
-    double m_treecode_potential;
+    double m_potential = 0;
+    double m_distance = 0;
+    double m_mass = 0;
+    // TODO: (dhub) Change input, consider removing
+    // double m_softening=-1;
+    double m_treecode_potential = 0;
 
     /// Calculate the Norm of the position vector and return it
     auto calc_origin_dist() -> double;
