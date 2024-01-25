@@ -22,6 +22,7 @@ double System::s_softening = 0.;
 double System::s_softening_length = 0.;
 
 auto System::init_system(const std::string_view &path_name) -> void {
+    Logging::info("");
     Logging::info("==============================================================================");
     Logging::info("Initializing System with file: {}", path_name);
 
@@ -30,15 +31,17 @@ auto System::init_system(const std::string_view &path_name) -> void {
         Logging::err("Error while reading file: {}", path_name);
         std::exit(-1);
     };
-    m_particles = particles_opt.value();
+    this->m_particles = particles_opt.value();
 
-    precalc_consts();
+    this->precalc_consts();
 
     // use this shell to calculcate half_mass_radius, and scale_length
     Histogram hist(100'000, *this);
 
-    update_half_mass_radius(hist.m_shells);
-    update_scale_length();
+    this->update_half_mass_radius(hist.m_shells);
+    this->update_scale_length();
+    this->update_times();
+
     // Relaxation under constraints is not needed
     // this->update_relaxation();
 
@@ -51,18 +54,21 @@ auto System::init_system(const std::string_view &path_name) -> void {
     softening. Despite its popularity, the choice (2.226) of S is not optimal in
     this sense, because the density of a Plummer sphere falls off too slowly with
     radius */
-    System::s_softening_length = -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
-                                          System::k_mean_inter_dist * System::k_mean_inter_dist));
+    System::s_softening_length =
+        -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
+                        System::k_mean_inter_dist * System::k_mean_inter_dist));
 
-    // add final division
-    System::s_softening /= 20;
+
+    System::s_softening = s_softening_length;
 
     Logging::info("Total mass of system:       {:<12}", m_total_mass);
     Logging::info("Half mass radius of system: {:>12.10f}", m_half_mass_rad);
     Logging::info("Scaling length of system:   {:>12.10f}", m_scale_length);
-    // Logging::info("Relaxation time of system:  {:>12.10f}", m_relaxation);
     Logging::info("Avg Inter-particle dist:    {:>12.10f}", System::k_mean_inter_dist);
     Logging::info("Softening of system:        {:>12.10f}", System::s_softening);
+    Logging::info("Crossing time:              {:>12.10f}", m_t_cross);
+    Logging::info("Relaxation time:            {:>12.10f}", m_t_relaxation);
+    Logging::info("==============================================================================");
     Logging::info("");
 }
 
@@ -203,6 +209,8 @@ auto System::newton_force(const double rad) const -> double {
 }
 
 auto System::calc_direct_initial_force() -> void {
+    // TODO: (aver) we could merge this with the solver step, where the initial calculation ignores
+    // updating position and velocity
     Logging::info("Calculating initial direct forces...");
 #if 1
     // with omp the 'slower' comparison based loop is much faster with omp (~2s)
@@ -235,18 +243,22 @@ auto System::calc_direct_initial_force() -> void {
 }
 
 auto System::solver_do_step(const double delta_time) -> void {
-    // Logging::info("Stepping forward with dt: {}", delta_time);
 
 #pragma omp parallel for
     for (auto &part : m_particles) {
-        const auto velocity_mid =
-            part.m_velocity + (part.m_direct_force / System::k_non_dim_mass) * delta_time / 2;
+        /*
+                // First leap, get mid velocity
+                const auto velocity_mid = part.m_velocity + part.m_direct_force * delta_time * .5;
+                // Update position for force calculation
+                part.m_position += velocity_mid * delta_time;
+        */
+        // r half
+        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
 
-        part.m_position += velocity_mid * delta_time;
         auto force_new = Eigen::Vector3d().setZero();
         // update forces at new position
 
-#if 1
+#if 0
 #pragma omp parallel private(part)
         {
             auto local_force = Eigen::Vector3d().setZero();
@@ -263,26 +275,32 @@ auto System::solver_do_step(const double delta_time) -> void {
             force_new += local_force;
         }
 #else
-#pragma omp parallel for private(part)
-        for (size_t i = 0; i < m_particles.size(); i++) {
-            auto other_part = m_particles[i];
-            if (other_part.m_id == part.m_id)
+        for (const auto &other : m_particles) {
+            if (other.m_id == part.m_id)
                 continue;
-#pragma omp critical
-            force_new += part.calc_direct_force_with_part(other_part);
+            force_new += part.calc_direct_force_with_part(other);
         }
 #endif
 
         // update the force
-        part.update_direct_force(force_new);
+        // part.update_direct_force(force_new);
+        part.m_direct_force = force_new;
 
         // set new velocity, completing leap-frog
-        part.m_velocity =
-            velocity_mid + (part.m_direct_force / System::k_non_dim_mass) * delta_time / 2;
+        // part.m_velocity = velocity_mid + part.m_direct_force * delta_time * .5;
+
+        // v n+1
+        part.m_velocity = part.m_velocity + delta_time * part.m_direct_force;
+        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
     }
 }
 
-auto System::calc_relaxation() const -> double {
+auto System::calc_crossing_time() const -> double {
+    double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
+    return m_half_mass_rad / circular_velocity;
+}
+
+auto System::calc_relaxation_time() const -> double {
     // NOTE: (dhub) Assume G=1
     double nr_part = this->system_int_size();
     // NOTE: (aver) the Mass(R_hm) == half the mass obviously, including the assumption of G==1,
@@ -290,12 +308,16 @@ auto System::calc_relaxation() const -> double {
     // Since the half mass radius is fixed, we do not expect change of the relaxation time if the
     // softening were to be increased or decreased. Although numerically, I don't know what the
     // implication are if softening is increased above mean inter particle separation
-    double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
-    double time_cross = m_half_mass_rad / circular_velocity;
-    return nr_part / (8 * std::log(nr_part)) * time_cross;
+
+    // double circular_velocity = std::sqrt(m_total_mass * 0.5 / m_half_mass_rad);
+    // double time_cross = m_half_mass_rad / circular_velocity;
+    return nr_part / (8 * std::log(nr_part)) * m_t_cross;
 }
 
-auto System::update_relaxation() -> void { m_relaxation = calc_relaxation(); }
+auto System::update_times() -> void {
+    m_t_cross = calc_crossing_time();
+    m_t_relaxation = calc_relaxation_time();
+}
 
 auto System::calc_overall_bounding_cube() -> BoundingCube {
     // WARN: (aver) Instantiating an Eigen::Tensor mallocs a few times, and apparently it does so

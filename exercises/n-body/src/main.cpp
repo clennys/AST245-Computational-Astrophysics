@@ -190,12 +190,15 @@ auto plot_forces_step_2() {
 }
 
 auto plot_do_steps() {
-    constexpr auto kTime = 10.;
-    constexpr auto kDeltaTime = 0.001;
+    System::s_softening = System::s_softening_length / 200;
+    g_system.calc_direct_initial_force();
+
+    const auto kTime = g_system.m_t_cross * 5;
+    constexpr auto kDeltaTime = 0.0000001;
     // constexpr auto kFinalTime = kTime / kDeltaTime;
 
-    for (double i = 0; i < kTime; i += kDeltaTime) {
-        Logging::info("i = {}", i);
+    for (double t = 0; t < kTime; t += kDeltaTime) {
+        Logging::info("t = {}", t);
         g_system.solver_do_step(kDeltaTime);
     }
 

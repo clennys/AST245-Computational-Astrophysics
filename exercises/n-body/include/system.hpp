@@ -22,23 +22,26 @@ class System {
     /// Dimensional Mass per particle
     static constexpr double k_dim_mass = 92.4259;
     /// Array of divisors to use for softening
-    static constexpr auto softening_divisors = {1., 10., 20., 50., 100., 200.};
-    /// Softening to be applied in Force calculcation. Made static, in order for other Classes to
-    /// access it
+    // static constexpr auto softening_divisors = {1., 10., 20., 50., 100., 200.};
+    static constexpr auto softening_divisors = {200.};
+    /// Softening length to be applied in Force calculcation. Made static, in order for other
+    /// Classes to access it
     static double s_softening_length;
+    /// `s_softening_length` is divided by `softening_divisors` to get a valid softening
     static double s_softening;
 
     //=============================================================================================
     // Regular member variables
     //=============================================================================================
-    PartVec m_particles;
+    PartVec m_particles = {};
     double m_total_mass = 0.;
     double m_half_mass_rad = 0.;
     double m_scale_length = 0.;
     double m_min_rad = std::numeric_limits<double>::max();
     double m_max_rad = 0.;
     double m_softening = 0.;
-    double m_relaxation = 0.;
+    double m_t_relaxation = 0.;
+    double m_t_cross = 0.;
 
     //=============================================================================================
     // Ctors, Dtors, etc.
@@ -109,9 +112,11 @@ class System {
     /// Do one step forward in the system
     auto solver_do_step(const double delta_time) -> void;
 
-    [[nodiscard]] auto calc_relaxation() const -> double;
+    [[nodiscard]] auto calc_crossing_time() const -> double;
 
-    auto update_relaxation() -> void;
+    [[nodiscard]] auto calc_relaxation_time() const -> double;
+
+    auto update_times() -> void;
 
     auto calc_overall_bounding_cube() -> BoundingCube;
 
