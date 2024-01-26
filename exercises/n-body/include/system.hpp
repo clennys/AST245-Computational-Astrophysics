@@ -127,6 +127,11 @@ class System {
     /// Reset particles and other calculated values for new computations
     auto reset_system() -> void;
 
+    auto animate_particles() -> void;
+
+    auto particles_pos_at_step(uint idx)
+        -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>;
+
   private:
     /// Calculate runtime constants for system deployment
     auto precalc_consts() -> void;

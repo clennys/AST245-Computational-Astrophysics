@@ -19,6 +19,7 @@ class Particle3D {
     // TODO: (dhub) Change input, consider removing
     // double m_softening=-1;
     double m_treecode_potential = 0;
+    std::vector<Eigen::Vector3d> m_pos_history;
 
     /// Calculate the Norm of the position vector and return it
     auto calc_origin_dist() -> double;
@@ -35,6 +36,8 @@ class Particle3D {
     auto update_direct_force(Eigen::Vector3d force) -> void;
 
     auto norm_force() -> double;
+
+    auto historize_part_state() -> void;
 };
 
 using PartVec = std::vector<Particle3D>;

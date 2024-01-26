@@ -2,8 +2,10 @@
 #include "data.hpp"
 #include "histogram.hpp"
 #include "logging.hpp"
+#include "mgl2/mgl.h"
 #include "node.hpp"
 #include "particle.hpp"
+#include <sstream>
 
 #include "Eigen/Eigen"
 
@@ -228,7 +230,10 @@ auto System::precalc_direct_initial_force() -> void {
             sum_force_inter_part += val;
         }
 #pragma omp critical
-        m_particles[i].update_direct_force(sum_force_inter_part);
+        {
+            m_particles[i].update_direct_force(sum_force_inter_part);
+            m_particles[i].historize_part_state();
+        }
     }
 #else
     // No perf gain in parallelizing this ... with omp
@@ -270,6 +275,7 @@ auto System::solver_do_step(const double delta_time) -> void {
 
         // set new velocity, completing leap-frog
         part.m_velocity = velocity_mid + (part.m_direct_force / part.m_mass) * delta_time * .5;
+        part.historize_part_state();
 
         // v n+1
         // part.m_velocity = part.m_velocity + delta_time * (part.m_direct_force/part.m_mass);
@@ -358,4 +364,40 @@ auto System::calc_real_relaxation() const -> void {
         Logging::info("Relaxation Timescale at {} yr", t_relax);
 
     Logging::info("==============================================================================");
+}
+
+auto System::particles_pos_at_step(uint idx)
+    -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> {
+    std::vector<double> x, y, z;
+    for (auto const &part : m_particles) {
+        x.push_back(part.m_pos_history[idx].x());
+        y.push_back(part.m_pos_history[idx].y());
+        z.push_back(part.m_pos_history[idx].z());
+    }
+    return {x, y, z};
+}
+auto System::animate_particles() -> void {
+    auto steps = m_particles[0].m_pos_history.size();
+    mglGraph gr(0, 3000, 2000);
+    // gr.StartGIF("plots/particles.gif");
+
+    for (uint i = 0; i < steps; i++) {
+        Logging::info("Frame {}", i);
+        gr.NewFrame(); // start frame
+        gr.SetRanges(-800, 800, -800, 800, -800, 800);
+        gr.Rotate(50, 10);
+        gr.Axis();
+        auto pos = particles_pos_at_step(i);
+        mglData x = std::get<0>(pos);
+        mglData y = std::get<1>(pos);
+        mglData z = std::get<2>(pos);
+        gr.Dots(x, y, z, "r");
+        gr.EndFrame(); // end frame
+        std::stringstream ss;
+        ss << "plots/animation/"
+           << "frame-" << i << ".png";
+        auto filename = ss.str();
+        gr.WriteFrame(filename.c_str()); // save frame
+    }
+    // gr.CloseGIF();
 }
