@@ -13,7 +13,6 @@ auto Particle3D::print_summary() const -> void {
     std::cout << "Potential =\n" << this->m_potential << std::endl;
     std::cout << "Distance =\n" << this->m_distance << std::endl;
     std::cout << "Force =\n" << this->m_direct_force << std::endl;
-    // Logging::info("Summary DONE");
 }
 
 auto Particle3D::update_direct_force(const Eigen::Vector3d force) -> void {

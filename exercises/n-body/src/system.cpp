@@ -204,7 +204,7 @@ auto System::newton_force(const double rad) const -> double {
     return -m_total_mass * System::k_dim_mass / ((rad + m_scale_length) * (rad + m_scale_length));
 }
 
-auto System::calc_direct_initial_force() -> void {
+auto System::precalc_direct_initial_force() -> void {
     // TODO: (aver) we could merge this with the solver step, where the initial calculation ignores
     // updating position and velocity
     Logging::info("Calculating initial direct forces...");

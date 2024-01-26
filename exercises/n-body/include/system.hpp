@@ -97,7 +97,7 @@ class System {
     [[nodiscard]] auto density_hernquist(const double rad) const -> double;
     [[nodiscard]] auto newton_force(const double rad) const -> double;
 
-    auto calc_direct_initial_force() -> void;
+    auto precalc_direct_initial_force() -> void;
 
     /// Helper method to adjust a radius to a bin size
     ///

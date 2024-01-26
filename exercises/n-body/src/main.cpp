@@ -9,10 +9,8 @@
 #include "mgl2/mgl.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <format>
-#include <numeric>
 #include <string_view>
 
 /// Particles read in and used in the tasks.
@@ -20,6 +18,8 @@
 ///
 static System g_system;
 
+/// Plots the density distribution numerically compared with the analytical distribution from the
+/// Hernquist paper
 auto plot_rho_step_1() {
     std::vector<double> index;
     std::vector<double> hernquist_dens;
@@ -32,7 +32,6 @@ auto plot_rho_step_1() {
 
     // set minimal radius to something else than 0, otherwise errors ensue
 
-    auto sum = 0.;
     auto hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : hist.m_shells) {
@@ -58,10 +57,7 @@ auto plot_rho_step_1() {
         hernquist_dens.emplace_back(System::fit_log_to_plot(hern_rho));
         numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
         rho_error.emplace_back(rho_err);
-
-        sum += shell.m_mass;
     }
-
 
     mglData x = index;
     mglData y_hern = hernquist_dens;
@@ -99,6 +95,8 @@ auto plot_rho_step_1() {
     Logging::info("Hernquist plotted.");
 }
 
+/// Plots the forces calculated by direct summation compared to the analytical force distribution
+/// from the Hernquist paper
 auto plot_forces_step_2() {
     constexpr auto no_bins = 50;
 
@@ -133,28 +131,15 @@ auto plot_forces_step_2() {
 
         System::s_softening = System::s_softening_length / div;
         // Initialize forces, with direct calculation
-        g_system.calc_direct_initial_force();
+        g_system.precalc_direct_initial_force();
 
         auto dir_force_hist = Histogram(no_bins, g_system, true);
 
         for (const auto &shell : dir_force_hist.m_shells) {
-
-            // TODO: (aver) we need to convert vector force to the center of the spherical
-            // distribution
-            auto val = std::accumulate(shell.m_particles.begin(),
-                                       shell.m_particles.end(),
-                                       0.,
-                                       [](double sum, const Particle3D &part) {
-                                           auto norm = part.m_position.norm();
-                                           auto projection =
-                                               part.m_position.dot(part.m_direct_force) / norm;
-                                           return sum + projection;
-                                       });
-            val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+            auto val = shell.get_avg_direct_force();
 
             direct_force.emplace_back(System::fit_log_to_plot(val));
             idx.emplace_back(shell.m_lower_inc);
-
         }
 
         mglData x = idx;
@@ -188,9 +173,10 @@ auto plot_forces_step_2() {
     }
 }
 
+/// Plot a final step after a predefined time integration
 auto plot_do_steps() {
     System::s_softening = System::s_softening_length / 200;
-    g_system.calc_direct_initial_force();
+    g_system.precalc_direct_initial_force();
 
     constexpr auto tau = 0.01;
     const auto kTime = g_system.m_t_cross * 3;
@@ -210,16 +196,7 @@ auto plot_do_steps() {
     auto dir_force_hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : dir_force_hist.m_shells) {
-        auto val = std::accumulate(shell.m_particles.begin(),
-                                   shell.m_particles.end(),
-                                   0.,
-                                   [](double sum, const Particle3D &part) {
-                                       auto norm = part.m_position.norm();
-                                       auto projection =
-                                           part.m_position.dot(part.m_direct_force) / norm;
-                                       return sum + projection;
-                                   });
-        val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+        auto val = shell.get_avg_direct_force();
 
         numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
         direct_force.emplace_back(System::fit_log_to_plot(val));
@@ -268,6 +245,7 @@ auto plot_do_steps() {
     gr.WritePNG("plots/density2.png");
 }
 
+/// Create an octree and calculate the forces by running multipole expansion on the tree
 auto tree_code() -> void {
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
     double tolerance_angle = 0.5;
@@ -369,9 +347,10 @@ auto calc_real_relaxation() {
     Logging::info("==============================================================================");
 }
 
+/// Creates a GIF showing the variances of the force distribution
 auto plot_gif_steps() {
     System::s_softening = System::s_softening_length / 200;
-    g_system.calc_direct_initial_force();
+    g_system.precalc_direct_initial_force();
 
     mglGraph gr(0, 1440, 900);
     gr.StartGIF("steps_forces.gif");
@@ -392,16 +371,7 @@ auto plot_gif_steps() {
         auto dir_force_hist = Histogram(no_bins, g_system, true);
 
         for (const auto &shell : dir_force_hist.m_shells) {
-            auto val = std::accumulate(shell.m_particles.begin(),
-                                       shell.m_particles.end(),
-                                       0.,
-                                       [](double sum, const Particle3D &part) {
-                                           auto norm = part.m_position.norm();
-                                           auto projection =
-                                               part.m_position.dot(part.m_direct_force) / norm;
-                                           return sum + projection;
-                                       });
-            val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+            auto val = shell.get_avg_direct_force();
 
             numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
             direct_force.emplace_back(System::fit_log_to_plot(val));
@@ -438,6 +408,7 @@ auto plot_gif_steps() {
 
     gr.CloseGIF();
 }
+
 auto main(const int argc, const char *const argv[]) -> int {
     if (argc != 2) {
         Logging::err("Please supply a single file argument!");
