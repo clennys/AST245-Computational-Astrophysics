@@ -124,9 +124,13 @@ class System {
     /// Calculate timescales with remultiplied factors and units
     auto calc_real_relaxation() const -> void;
 
+    /// Reset particles and other calculated values for new computations
+    auto reset_system() -> void;
+
   private:
     /// Calculate runtime constants for system deployment
     auto precalc_consts() -> void;
+    PartVec ic_particles = {};
 };
 
 #endif // ! COMPASTRO_SYSTEM_H_

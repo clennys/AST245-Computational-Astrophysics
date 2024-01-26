@@ -305,23 +305,94 @@ auto tree_code() -> void {
     */
 }
 
+/// Creates a GIF showing the variances of the force distribution integrated via tree
+auto plot_gif_steps_tree() {
+    constexpr auto no_bins = 50;
+    constexpr auto tau = 0.01;
+    const auto kTime = g_system.m_t_cross * 2;
+    const auto kDeltaTime = tau * g_system.m_t_cross;
 
+    g_system.reset_system();
+    System::s_softening = System::s_softening_length / 200;
+    g_system.precalc_direct_initial_force();
 
-/// Creates a GIF showing the variances of the force distribution
+    constexpr auto tolerance_angle = 0.1;
+    BoundingCube root_cube = g_system.calc_overall_bounding_cube();
+    auto tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
+
+    mglGraph gr(0, 1440, 900);
+    gr.StartGIF("steps_tree_forces.gif");
+
+    tree.build();
+    tree.tree_walk();
+
+    for (double t = 0.; t < kTime; t += kDeltaTime) {
+        Logging::info("t = {}", t);
+        gr.NewFrame();
+
+        // std::vector<double> numeric_dens;
+        std::vector<double> tree_force;
+        std::vector<double> idx;
+
+        g_system.m_particles = tree.m_particles;
+        auto dir_force_hist = Histogram(no_bins, g_system, true);
+
+        for (const auto &shell : dir_force_hist.m_shells) {
+            auto val = shell.get_avg_tree_force();
+
+            // numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
+            tree_force.emplace_back(System::fit_log_to_plot(val));
+            idx.emplace_back(shell.m_lower_inc);
+        }
+
+        mglData x = idx;
+        mglData nforce = tree_force;
+        // mglData ndens = numeric_dens;
+
+        gr.SetRange('x', x);
+        gr.SetRange('y', nforce);
+
+        gr.SetFontSize(2);
+        gr.SetCoor(mglLogX);
+        gr.Axis();
+
+        gr.Label('x', "Radius [l]", 0);
+        gr.Label('y', "Force", 0);
+
+        gr.Plot(x, nforce, "r.");
+        gr.AddLegend("Numeric", "r.");
+
+        // Add a text box at the top right
+        gr.Title(std::format("t: {}", t).c_str());
+
+        gr.Legend();
+
+        gr.EndFrame();
+
+        tree.reset_tree();
+        tree.build();
+        tree.tree_step(kDeltaTime);
+    }
+
+    gr.CloseGIF();
+}
+
+/// Creates a GIF showing the variances of the force distribution integrated via direct calculation
 auto plot_gif_steps() {
+    constexpr auto no_bins = 50;
+    constexpr auto tau = 0.01;
+    const auto kTime = g_system.m_t_cross * 2;
+    const auto kDeltaTime = tau * g_system.m_t_cross;
+
+    g_system.reset_system();
     System::s_softening = System::s_softening_length / 200;
     g_system.precalc_direct_initial_force();
 
     mglGraph gr(0, 1440, 900);
     gr.StartGIF("steps_forces.gif");
 
-    constexpr auto no_bins = 50;
-
-    constexpr auto tau = 0.01;
-    const auto kTime = g_system.m_t_cross * 5;
-    const auto kDeltaTime = tau * g_system.m_t_cross;
-
     for (double t = 0.; t < kTime; t += kDeltaTime) {
+        Logging::info("t = {}", t);
         gr.NewFrame();
 
         std::vector<double> numeric_dens;

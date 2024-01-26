@@ -31,6 +31,7 @@ auto System::init_system(const std::string_view &path_name) -> void {
         Logging::err("Error while reading file: {}", path_name);
         std::exit(-1);
     };
+    this->ic_particles = particles_opt.value();
     this->m_particles = particles_opt.value();
 
     this->precalc_consts();
@@ -319,6 +320,8 @@ auto System::calc_overall_bounding_cube() -> BoundingCube {
 
     return cube;
 }
+auto System::reset_system() -> void { this->m_particles = this->ic_particles; }
+
 auto System::calc_real_relaxation() const -> void {
     Logging::info("==============================================================================");
     Logging::info("Calculating relaxation timescale");

@@ -69,6 +69,20 @@ auto TreeCode::tree_walk() -> void {
     for (auto &part : m_particles) {
         part.m_tree_force = recursive_tree_walk(m_octree, part);
     }
+    Logging::info("Tree Walk completed");
+}
+
+auto TreeCode::tree_step(const double dt) -> void {
+    for (auto &part : m_particles) {
+        // First leap, get mid velocity
+        const auto velocity_mid = part.m_velocity + (part.m_tree_force / part.m_mass) * dt * .5;
+        // Update position for force calculation
+        part.m_position += velocity_mid * dt;
+        // update new force
+        part.m_tree_force = recursive_tree_walk(m_octree, part);
+        // set new velocity, completing leap-frog
+        part.m_velocity = velocity_mid + (part.m_tree_force / part.m_mass) * dt * .5;
+    }
 }
 
 // TODO: (dhub) Use loops to draw lines
@@ -132,3 +146,8 @@ auto TreeCode::plot_recursive(mglGraph &gr, const Node *node) -> void {
 }
 
 auto TreeCode::plot(mglGraph &gr) -> void { plot_recursive(gr, m_octree); };
+
+auto TreeCode::reset_tree() -> void {
+    delete this->m_octree;
+    this->m_octree = new Node(nullptr, m_particles, m_bounding_cube_root, 0);
+}
