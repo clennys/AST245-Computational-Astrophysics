@@ -319,3 +319,40 @@ auto System::calc_overall_bounding_cube() -> BoundingCube {
 
     return cube;
 }
+auto System::calc_real_relaxation() const -> void {
+    Logging::info("==============================================================================");
+    Logging::info("Calculating relaxation timescale");
+
+    constexpr auto k_parsec_to_km_factor = 3.0857e+13;
+    constexpr auto k_seconds_to_year = 60. * 60. * 24. * 365.25;
+
+    auto rel_hist = Histogram(100'000, *this);
+    for (auto &shell : rel_hist.m_shells) {
+        shell.m_mass = shell.shell_int_size() * System::k_dim_mass;
+        shell.update_density();
+    }
+
+    const auto r_hm = this->calc_half_mass_radius(rel_hist.m_shells);
+    const auto M = this->system_int_size() * System::k_dim_mass;
+    Logging::info("Half Mass Radius at     {} pc", r_hm);
+
+    // WARN: (aver) What to do? Use G=1 or use the real unit of G?
+    const auto v_c = std::sqrt(System::k_G * M * 0.5 / r_hm);
+    Logging::info("Circular Velocity at    {} km / s", v_c);
+
+    // const auto t_cross = r_hm / v_c;
+    // Logging::info("Crossing Timescale at   {} pc / (km/s)", t_cross);
+    const auto t_cross_km = (r_hm * k_parsec_to_km_factor) / v_c;
+    const auto t_cross_yr = t_cross_km / k_seconds_to_year;
+    Logging::info("Crossing Timescale at   {} yr", t_cross_yr);
+
+    const auto t_relax =
+        this->system_int_size() * t_cross_yr / (8 * std::log(this->system_int_size()));
+
+    if (t_relax > 500'000)
+        Logging::info("Relaxation Timescale at {} Myr", t_relax / 1'000'000);
+    else
+        Logging::info("Relaxation Timescale at {} yr", t_relax);
+
+    Logging::info("==============================================================================");
+}

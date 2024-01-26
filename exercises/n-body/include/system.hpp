@@ -121,6 +121,9 @@ class System {
 
     auto calc_overall_bounding_cube() -> BoundingCube;
 
+    /// Calculate timescales with remultiplied factors and units
+    auto calc_real_relaxation() const -> void;
+
   private:
     /// Calculate runtime constants for system deployment
     auto precalc_consts() -> void;
