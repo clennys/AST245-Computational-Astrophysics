@@ -27,3 +27,16 @@ auto Shell::get_avg_direct_force() const -> double {
                                      });
     return this->shell_int_size() == 0 ? 0. : avg_force / this->shell_int_size();
 }
+
+auto Shell::get_avg_tree_force() const -> double {
+    auto avg_force = std::accumulate(this->m_particles.begin(),
+                                     this->m_particles.end(),
+                                     0.,
+                                     [](double sum, const Particle3D &part) {
+                                         auto norm = part.m_position.norm();
+                                         auto projection =
+                                             part.m_position.dot(part.m_tree_force) / norm;
+                                         return sum + projection;
+                                     });
+    return this->shell_int_size() == 0 ? 0. : avg_force / this->shell_int_size();
+}

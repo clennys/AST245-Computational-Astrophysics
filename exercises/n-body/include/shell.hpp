@@ -41,6 +41,7 @@ class Shell {
     /// Return the average force calculated bu direct summation in the shell, projected on the
     /// center of the spherical distribution
     auto get_avg_direct_force() const -> double;
+    auto get_avg_tree_force() const -> double;
 
   private:
     // precalculated (by the compiler!) constant for shell volume

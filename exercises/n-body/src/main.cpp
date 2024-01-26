@@ -248,7 +248,7 @@ auto plot_do_steps() {
 /// Create an octree and calculate the forces by running multipole expansion on the tree
 auto tree_code() -> void {
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
-    double tolerance_angle = 0.5;
+    double tolerance_angle = 0.1;
     TreeCode tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
     tree.build();
     // tree.tree_walk();
@@ -277,16 +277,7 @@ auto tree_code() -> void {
     auto dir_force_hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : dir_force_hist.m_shells) {
-        auto val = std::accumulate(shell.m_particles.begin(),
-                                   shell.m_particles.end(),
-                                   0.,
-                                   [](double sum, const Particle3D &part) {
-                                       auto norm = part.m_position.norm();
-                                       auto projection =
-                                           part.m_position.dot(part.m_tree_force) / norm;
-                                       return sum + projection;
-                                   });
-        val = shell.shell_int_size() == 0 ? 0. : val / shell.shell_int_size();
+        auto val = shell.get_avg_tree_force();
 
         numeric_force.emplace_back(System::fit_log_to_plot(val));
         idx.emplace_back(shell.m_lower_inc);
@@ -316,9 +307,11 @@ auto tree_code() -> void {
 
 /// Calculate timescales with remultiplied factors and units
 auto calc_real_relaxation() {
-    constexpr auto parsec_to_km_factor = 3.0857e+13;
     Logging::info("==============================================================================");
     Logging::info("Calculating relaxation timescale");
+
+    constexpr auto k_parsec_to_km_factor = 3.0857e+13;
+    constexpr auto k_seconds_to_year = 60. * 60. * 24. * 365.25;
 
     auto rel_hist = Histogram(100'000, g_system);
     for (auto &shell : rel_hist.m_shells) {
@@ -336,13 +329,17 @@ auto calc_real_relaxation() {
 
     // const auto t_cross = r_hm / v_c;
     // Logging::info("Crossing Timescale at   {} pc / (km/s)", t_cross);
-    const auto t_cross_km = (r_hm * parsec_to_km_factor) / v_c;
-    const auto t_cross_yr = t_cross_km / (60. * 60. * 24. * 365.25);
+    const auto t_cross_km = (r_hm * k_parsec_to_km_factor) / v_c;
+    const auto t_cross_yr = t_cross_km / k_seconds_to_year;
     Logging::info("Crossing Timescale at   {} yr", t_cross_yr);
 
     const auto t_relax =
-        g_system.system_int_size() / (8 * std::log(g_system.system_int_size()) * t_cross_yr);
-    Logging::info("Relaxation Timescale at {} yr", t_relax);
+        g_system.system_int_size() * t_cross_yr / (8 * std::log(g_system.system_int_size()));
+
+    if (t_relax > 500'000)
+        Logging::info("Relaxation Timescale at {} Myr", t_relax / 1'000'000);
+    else
+        Logging::info("Relaxation Timescale at {} yr", t_relax);
 
     Logging::info("==============================================================================");
 }

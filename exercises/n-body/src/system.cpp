@@ -45,19 +45,23 @@ auto System::init_system(const std::string_view &path_name) -> void {
     // Relaxation under constraints is not needed
     // this->update_relaxation();
 
-    // System::s_softening = -1 / (std::sqrt(g_system.m_max_rad * g_system.m_max_rad +
-    //                                       g_system.m_scale_length * g_system.m_scale_length));
-
     /* In collisionless simulations the choice of softening kernel and softening
     length is a compromise between maximizing the smoothness of the force-
     field and minimizing the degradation of the spatial resolution caused by the
     softening. Despite its popularity, the choice (2.226) of S is not optimal in
     this sense, because the density of a Plummer sphere falls off too slowly with
     radius */
-    System::s_softening_length =
-        -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
-                        System::k_mean_inter_dist * System::k_mean_inter_dist));
 
+    // System::s_softening_length =
+    //     -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
+    //                     System::k_mean_inter_dist * System::k_mean_inter_dist));
+
+    System::s_softening_length =
+        -(this->m_max_rad * this->m_max_rad +
+          (3. / 2.) * System::k_mean_inter_dist * System::k_mean_inter_dist) /
+        std::pow(std::sqrt(this->m_max_rad * this->m_max_rad +
+                           System::k_mean_inter_dist * System::k_mean_inter_dist),
+                 3);
 
     System::s_softening = s_softening_length;
 

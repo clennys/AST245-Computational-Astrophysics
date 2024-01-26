@@ -40,8 +40,7 @@ auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen:
     }
 
     if (opening_angle < m_tolerance_angle) {
-        auto val = node->multipole_expansion(part);
-        return val;
+        return node->multipole_expansion(part);
     } else {
         // Logging::warn("Opening angle ignored with {} particles", node->m_particles.size());
         // WARN: (aver) We shouldn't be able to fall into this case
@@ -54,7 +53,7 @@ auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen:
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 Node *child = node->m_children(i, j, k);
-                if (child != nullptr) {
+                if (child) {
                     force += recursive_tree_walk(child, part);
                 }
             }
