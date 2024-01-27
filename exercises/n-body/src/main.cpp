@@ -34,6 +34,7 @@ auto plot_rho_step_1() {
     for (const auto &shell : hist.m_shells) {
 
         auto hern_rho = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) / 2);
+        auto hern_part = hern_rho * shell.m_volume/System::k_dim_mass;
 
         // NOTE: (aver) \lambda = number of shells on average throughout all bins
         const auto rho_err = std_dev * System::k_dim_mass / shell.m_volume;
@@ -49,9 +50,9 @@ auto plot_rho_step_1() {
 
         index.emplace_back(shell.m_lower_inc);
 
-        hernquist_dens.emplace_back(System::fit_log_to_plot(hern_rho));
-        numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_density));
-        rho_error.emplace_back(rho_err);
+        hernquist_dens.emplace_back(System::fit_log_to_plot(hern_part));
+        numeric_dens.emplace_back(System::fit_log_to_plot(shell.m_particles.size()));
+        rho_error.emplace_back(std_dev);
     }
 
     mglData x = index;
@@ -68,17 +69,17 @@ auto plot_rho_step_1() {
 
     gr.SetRange('x', x);
     gr.SetRange('y', y_min, y_max);
-    gr.SetCoor(mglLogLog);
+    gr.SetCoor(mglLogX);
     gr.Axis();
 
     gr.Label('x', "Radius", 0);
-    gr.Label('y', "Density", 0);
+    gr.Label('y', "Number of Particles", 0);
 
     gr.Plot(x, y_hern, "b");
-    gr.AddLegend("Hernquist Density Profile", "b");
+    gr.AddLegend("Hernquist Number of Particles", "b");
 
     gr.Plot(x, y_num, "r.");
-    gr.AddLegend("Numeric Density Profile", "r.");
+    gr.AddLegend("Numeric Number of Particles", "r.");
 
     gr.Error(x, y_num, y_err, "q");
     gr.AddLegend("Poissonian Error", "q");
@@ -448,7 +449,7 @@ auto main(const int argc, const char *const argv[]) -> int {
     // ============================================================================================
     // task 1
     // ============================================================================================
-    // plot_rho_step_1();
+    plot_rho_step_1();
     // TODO: (aver)
     // - We still need to do a comparison between different softeining values and discuss their
     //      significance
@@ -462,7 +463,7 @@ auto main(const int argc, const char *const argv[]) -> int {
 
     // plot_do_steps();
     // tree_code();
-    plot_gif_steps();
+    // plot_gif_steps();
 
     Logging::info("Successfully quit!");
     return 0;

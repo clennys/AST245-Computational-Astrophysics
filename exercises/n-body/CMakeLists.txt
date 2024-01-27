@@ -46,7 +46,7 @@ add_compile_options(
     -O3
     -march=native
     -mtune=native
-    -mavx512f
+    # -mavx512f
     -mavx2
     -mavx
     -msse
