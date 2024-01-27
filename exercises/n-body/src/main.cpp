@@ -99,7 +99,7 @@ auto plot_forces_step_2() {
     constexpr auto no_bins = 50;
 
 // This should be a one time calculation and then save it in the System class
-#if 0
+#if 1
     auto mean_inter_idst = g_system.precalc_mean_inter_part_dist();
     Logging::info("Mean inter-particle distance: {}", mean_inter_idst);
     // use the half mass radius as requested in the instructions
@@ -198,7 +198,6 @@ auto tree_code() -> void {
     std::vector<double> analytic_force;
     std::vector<double> idx;
 
-
     for (int i = 0; i <= no_bins; i++) {
         auto rad = g_system.convert_lin_to_log(no_bins, i);
         auto val = g_system.newton_force(rad);
@@ -219,7 +218,6 @@ auto tree_code() -> void {
         auto df = shell.get_avg_direct_force();
         direct_force.emplace_back(System::fit_log_to_plot(df));
     }
-
 
     tree.tree_walk();
     g_system.m_particles = tree.m_particles;
