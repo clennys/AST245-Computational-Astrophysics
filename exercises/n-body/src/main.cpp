@@ -72,8 +72,8 @@ auto plot_rho_step_1() {
     gr.SetRange('x', x);
     gr.SetRange('y', y_min, y_max);
     gr.SetFontSize(2);
-    gr.Axis();
     gr.SetCoor(mglLogLog);
+    gr.Axis();
 
     gr.Label('x', "Radius", 0);
     gr.Label('y', "Density", 0);
@@ -90,7 +90,7 @@ auto plot_rho_step_1() {
     // finalize image
     gr.Legend();
     gr.WriteJPEG("plots/hernquist.jpg");
-    gr.WritePNG("plots/hernquist.png");
+    gr.WritePNG("plots/png/hernquist.png");
 
     Logging::info("Hernquist plotted.");
 }
@@ -169,7 +169,7 @@ auto plot_forces_step_2() {
 
         gr.Legend();
         gr.WriteJPEG(std::format("plots/forces_{}.jpg", div).c_str());
-        // gr.WritePNG(std::format("plots/forces_{}.png", div).c_str());
+        gr.WritePNG(std::format("plots/png/forces_{}.png", div).c_str());
     }
 }
 
@@ -224,7 +224,7 @@ auto plot_do_steps() {
 
     gr.Legend();
     gr.WriteJPEG("plots/forces2.jpg");
-    gr.WritePNG("plots/forces2.png");
+    gr.WritePNG("plots/png/forces2.png");
 
     gr.ClearFrame();
     gr.ClearLegend();
@@ -242,7 +242,7 @@ auto plot_do_steps() {
 
     gr.Legend();
     gr.WriteJPEG("plots/density2.jpg");
-    gr.WritePNG("plots/density2.png");
+    gr.WritePNG("plots/png/density2.png");
 }
 
 /// Create an octree and calculate the forces by running multipole expansion on the tree
@@ -253,19 +253,20 @@ auto tree_code() -> void {
     tree.build();
     // tree.tree_walk();
 
-    mglGraph gr(0, 3000, 2000);
+    mglGraph gr_tree(0, 3000, 2000);
 
     // set plot parameters
-    gr.Rotate(50, 10); // Adjust for a better viewing angle
-    gr.SetRanges(-800, 800, -800, 800, -800, 800);
-    gr.Axis();
-    tree.plot(gr);
+    gr_tree.Rotate(50, 10); // Adjust for a better viewing angle
+    gr_tree.SetRanges(-800, 800, -800, 800, -800, 800);
+    gr_tree.Axis();
+    tree.plot(gr_tree);
     auto transform = g_system.transform_vectors();
     mglData x = std::get<0>(transform);
     mglData y = std::get<1>(transform);
     mglData z = std::get<2>(transform);
-    gr.Dots(x, y, z, "r");
-    gr.WriteFrame("plots/treecode.png");
+    gr_tree.Dots(x, y, z, "r");
+    gr_tree.WriteFrame("plots/treecode.jpg");
+    gr_tree.WriteFrame("plots/png/treecode.png");
 
     /*
     constexpr auto no_bins = 50;
@@ -283,10 +284,10 @@ auto tree_code() -> void {
         idx.emplace_back(shell.m_lower_inc);
     }
 
-    mglData x = idx;
+    mglData x_2 = idx;
     mglData nforce = numeric_force;
 
-    gr.SetRange('x', x);
+    gr.SetRange('x', x_2);
     gr.SetRange('y', nforce);
 
     gr.SetFontSize(2);
@@ -296,12 +297,12 @@ auto tree_code() -> void {
     gr.Label('x', "Radius [l]", 0);
     gr.Label('y', "Force", 0);
 
-    gr.Plot(x, nforce, "r.");
+    gr.Plot(x_2, nforce, "r.");
     gr.AddLegend("Numeric", "r.");
 
     gr.Legend();
     gr.WriteJPEG("plots/forces3.jpg");
-    gr.WritePNG("plots/forces3.png");
+    gr.WritePNG("plots/png/forces3.png");
     */
 }
 
