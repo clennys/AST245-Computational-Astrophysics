@@ -108,7 +108,8 @@
 
 	Taken from \cite{2008gady}, equation (2.227)
 	\begin{equation}
-		\epsilon=-\frac{r_{max}^2+\frac{3}{2} d^2}{\left(r_{max}^2+d^2\right)^{3 / 2}}
+		% \epsilon=-\frac{r_{max}^2+\frac{3}{2} d^2}{\left(r_{max}^2+d^2\right)^{3 / 2}}
+		\epsilon=-\frac{r_{max}^2+\frac{3}{2} a^2}{\left(r_{max}^2+a^2\right)^{3 / 2}}
 		\label{eq:softening}
 	\end{equation}
 
@@ -117,21 +118,34 @@
 		\item $i$ - Particle under consideration
 		\item $\epsilon$ - Softening
 		\item $r_{max}$ - Maximum radius
-		\item $d$ - Mean inter-particle separation, calculated numerically once
+		      % \item $d$ - Mean inter-particle separation, calculated numerically once
+		\item $a$ - Scale length
 		\item $G=1$
 	\end{itemize} }
 \end{frame}
 
-\begin{frame}
-	% \frametitle{Comparison}
-	% With $O(N^2)$ computational complexity.\\
+\begin{frame}{Softening /= 1}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_1.png}
+\end{frame}
 
-	\begin{figure}
-		\centering
-		\includegraphics[width=0.95\textwidth]{figures/plots/forces.png}
-		% \caption{}\label{fig:}
-	\end{figure}
+\begin{frame}{Softening /= 8}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_8.png}
+\end{frame}
 
+\begin{frame}{Softening /= 16}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_16.png}
+\end{frame}
+
+\begin{frame}{Softening /= 32}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_32.png}
+\end{frame}
+
+\begin{frame}{Softening /= 64}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_64.png}
+\end{frame}
+
+\begin{frame}{Softening /= 128}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_128.png}
 \end{frame}
 
 \begin{frame}{Relaxation Timescale}
