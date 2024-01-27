@@ -59,10 +59,17 @@ auto System::init_system(const std::string_view &path_name) -> void {
     //     -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
     //                     System::k_mean_inter_dist * System::k_mean_inter_dist));
 
+    // System::s_softening_length =
+    //     -(this->m_max_rad * this->m_max_rad +
+    //       (3. / 2.) * System::k_mean_inter_dist * System::k_mean_inter_dist) /
+    //     std::pow(std::sqrt(this->m_max_rad * this->m_max_rad +
+    //                        System::k_mean_inter_dist * System::k_mean_inter_dist),
+    //              3);
+
     System::s_softening_length =
-        -(this->m_max_rad * this->m_max_rad +
+        -(this->m_half_mass_rad * this->m_half_mass_rad +
           (3. / 2.) * System::k_mean_inter_dist * System::k_mean_inter_dist) /
-        std::pow(std::sqrt(this->m_max_rad * this->m_max_rad +
+        std::pow(std::sqrt(this->m_half_mass_rad * this->m_half_mass_rad +
                            System::k_mean_inter_dist * System::k_mean_inter_dist),
                  3);
 
@@ -215,6 +222,7 @@ auto System::precalc_direct_initial_force() -> void {
     // TODO: (aver) we could merge this with the solver step, where the initial calculation ignores
     // updating position and velocity
     Logging::info("Calculating initial direct forces...");
+    Logging::info("Softening: {}", System::s_softening);
 #if 1
     // with omp the 'slower' comparison based loop is much faster with omp (~2s)
 #pragma omp parallel for
@@ -248,18 +256,23 @@ auto System::precalc_direct_initial_force() -> void {
 #endif
 }
 
+/// Kick-Drift-Kick
+#define KDK
+
 auto System::solver_do_step(const double delta_time) -> void {
-#pragma omp parallel for shared(m_particles)
+#pragma omp parallel for schedule(dynamic)
     for (auto &part : m_particles) {
 
+#ifdef KDK
         // First leap, get mid velocity
         const auto velocity_mid =
             part.m_velocity + (part.m_direct_force / part.m_mass) * delta_time * .5;
         // Update position for force calculation
         part.m_position += velocity_mid * delta_time;
-
+#else
         // r half
-        // part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+#endif
 
         auto force_new = Eigen::Vector3d().setZero();
         // update forces at new position
@@ -268,18 +281,19 @@ auto System::solver_do_step(const double delta_time) -> void {
                 continue;
             force_new += part.calc_direct_force_with_part(other);
         }
-
         // update the force
-        // part.update_direct_force(force_new);
-        part.m_direct_force = force_new;
+        part.update_direct_force(force_new);
 
+#ifdef KDK
         // set new velocity, completing leap-frog
         part.m_velocity = velocity_mid + (part.m_direct_force / part.m_mass) * delta_time * .5;
-        part.historize_part_state();
 
+#else
         // v n+1
-        // part.m_velocity = part.m_velocity + delta_time * (part.m_direct_force/part.m_mass);
-        // part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+        part.m_velocity = part.m_velocity + delta_time * (part.m_direct_force / part.m_mass);
+        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+#endif
+        part.historize_part_state();
     }
 }
 
