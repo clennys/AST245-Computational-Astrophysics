@@ -29,9 +29,6 @@ auto plot_rho_step_1() {
     constexpr auto no_bins = 50;
     const auto avg_parts = g_system.system_int_size() / no_bins;
     const auto std_dev = std::sqrt(avg_parts);
-
-    // set minimal radius to something else than 0, otherwise errors ensue
-
     auto hist = Histogram(no_bins, g_system, true);
 
     for (const auto &shell : hist.m_shells) {
@@ -39,18 +36,16 @@ auto plot_rho_step_1() {
         auto hern_rho = g_system.density_hernquist((shell.m_lower_inc + shell.m_upper) / 2);
 
         // NOTE: (aver) \lambda = number of shells on average throughout all bins
-        const auto rho_err = std_dev / shell.m_volume;
-        // const auto rho_err = std_dev * shell.m_mass / shell.m_volume;
+        const auto rho_err = std_dev * System::k_dim_mass / shell.m_volume;
 
-        // const auto k_no_parts_in_shell = shell.m_mass / Particle3D::km_non_dim_mass;
         // // NOTE: (aver) \lambda = number of shells in current bin
         // const auto rho_err =
-        //     std::sqrt(k_no_parts_in_shell) * Particle3D::km_non_dim_mass / k_shell_volume;
+        //     std::sqrt(shell.shell_int_size()) * System::k_dim_mass / shell.m_volume;
 
         // // NOTE: (aver) \lambda = number of shells in a Hernquist bin
-        // const auto no_parts_in_hern = (hern_rho * k_shell_volume) / Particle3D::km_non_dim_mass;
+        // const auto no_parts_in_hern = (hern_rho * shell.m_volume) / System::k_dim_mass;
         // const auto rho_err =
-        //     std::sqrt(no_parts_in_hern) * Particle3D::km_non_dim_mass / k_shell_volume;
+        //     std::sqrt(no_parts_in_hern) * System::k_dim_mass / shell.m_volume;
 
         index.emplace_back(shell.m_lower_inc);
 
@@ -69,9 +64,10 @@ auto plot_rho_step_1() {
 
     // set plot parameters
     mglGraph gr(0, 3000, 2000);
+    gr.SetFontSize(2);
+
     gr.SetRange('x', x);
     gr.SetRange('y', y_min, y_max);
-    gr.SetFontSize(2);
     gr.SetCoor(mglLogLog);
     gr.Axis();
 
