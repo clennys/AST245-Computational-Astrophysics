@@ -40,8 +40,7 @@ auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen:
     }
 
     if (opening_angle < m_tolerance_angle) {
-        auto val = node->multipole_expansion(part);
-        return val;
+        return node->multipole_expansion(part);
     } else {
         // Logging::warn("Opening angle ignored with {} particles", node->m_particles.size());
         // WARN: (aver) We shouldn't be able to fall into this case
@@ -54,7 +53,7 @@ auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen:
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 Node *child = node->m_children(i, j, k);
-                if (child != nullptr) {
+                if (child) {
                     force += recursive_tree_walk(child, part);
                 }
             }
@@ -69,6 +68,20 @@ auto TreeCode::tree_walk() -> void {
     // pointer, simply copying this->m_octree to a new pointer results in a segfault
     for (auto &part : m_particles) {
         part.m_tree_force = recursive_tree_walk(m_octree, part);
+    }
+    Logging::info("Tree Walk completed");
+}
+
+auto TreeCode::tree_step(const double dt) -> void {
+    for (auto &part : m_particles) {
+        // First leap, get mid velocity
+        const auto velocity_mid = part.m_velocity + (part.m_tree_force / part.m_mass) * dt * .5;
+        // Update position for force calculation
+        part.m_position += velocity_mid * dt;
+        // update new force
+        part.m_tree_force = recursive_tree_walk(m_octree, part);
+        // set new velocity, completing leap-frog
+        part.m_velocity = velocity_mid + (part.m_tree_force / part.m_mass) * dt * .5;
     }
 }
 
@@ -133,3 +146,8 @@ auto TreeCode::plot_recursive(mglGraph &gr, const Node *node) -> void {
 }
 
 auto TreeCode::plot(mglGraph &gr) -> void { plot_recursive(gr, m_octree); };
+
+auto TreeCode::reset_tree() -> void {
+    delete this->m_octree;
+    this->m_octree = new Node(nullptr, m_particles, m_bounding_cube_root, 0);
+}

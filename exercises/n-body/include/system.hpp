@@ -12,24 +12,37 @@ class System {
     //=============================================================================================
     // Static variables and constants
     //=============================================================================================
-    static constexpr double k_mean_inter_dist = 4.023775510528517;
+
     /// Non dimensional particle mass of one
-    static constexpr double k_non_dim_mass = 1.;
-    // static constexpr double km_non_dim_mass = 92.4259;
-    /// Softening to be applied in Force calculcation
+    // static constexpr double k_non_dim_mass = 1.;
+    /// Dimensional Mass per particle
+    static constexpr double k_dim_mass = 92.4259;
+
+    /// Graviational Constant in pc * (km/s)^2 / M_\odot
+    static constexpr double k_G = 4.3009172706e-3;
+    /// Precalculated Mean inter-particle distance
+    static constexpr double k_mean_inter_dist = 4.023775510528517;
+    /// Array of divisors to use for softening
+    static constexpr auto softening_divisors = {1., 10., 20., 50., 100., 200.};
+    // static constexpr auto softening_divisors = {200.};
+    /// Softening length to be applied in Force calculcation. Made static, in order for other
+    /// Classes to access it
+    static double s_softening_length;
+    /// `s_softening_length` is divided by `softening_divisors` to get a valid softening
     static double s_softening;
 
     //=============================================================================================
     // Regular member variables
     //=============================================================================================
-    PartVec m_particles;
+    PartVec m_particles = {};
     double m_total_mass = 0.;
     double m_half_mass_rad = 0.;
     double m_scale_length = 0.;
     double m_min_rad = std::numeric_limits<double>::max();
     double m_max_rad = 0.;
     double m_softening = 0.;
-    double m_relaxation = 0.;
+    double m_t_relaxation = 0.;
+    double m_t_cross = 0.;
 
     //=============================================================================================
     // Ctors, Dtors, etc.
@@ -84,9 +97,14 @@ class System {
     [[nodiscard]] auto density_hernquist(const double rad) const -> double;
     [[nodiscard]] auto newton_force(const double rad) const -> double;
 
-    auto calc_direct_initial_force() -> void;
+    auto precalc_direct_initial_force() -> void;
 
     /// Helper method to adjust a radius to a bin size
+    ///
+    /// The ratio is created by `m_min_rad` and `m_max_rad`.
+    /// The exponent scales the value to between 0 and 1., by dividing `val` and `no_bins`.
+    /// The multiplication of the value with `m_min_rad` guarantees that the value falls in to the
+    /// designated range.
     [[nodiscard]] auto convert_lin_to_log(const int no_bins, const double val) const -> double;
 
     /// Helper method to add a minimal epsilon to values to circumvent log(0) errors
@@ -95,15 +113,24 @@ class System {
     /// Do one step forward in the system
     auto solver_do_step(const double delta_time) -> void;
 
-    [[nodiscard]] auto calc_relaxation() const -> double;
+    [[nodiscard]] auto calc_crossing_time() const -> double;
 
-    auto update_relaxation() -> void;
+    [[nodiscard]] auto calc_relaxation_time() const -> double;
+
+    auto update_times() -> void;
 
     auto calc_overall_bounding_cube() -> BoundingCube;
+
+    /// Calculate timescales with remultiplied factors and units
+    auto calc_real_relaxation() const -> void;
+
+    /// Reset particles and other calculated values for new computations
+    auto reset_system() -> void;
 
   private:
     /// Calculate runtime constants for system deployment
     auto precalc_consts() -> void;
+    PartVec ic_particles = {};
 };
 
 #endif // ! COMPASTRO_SYSTEM_H_

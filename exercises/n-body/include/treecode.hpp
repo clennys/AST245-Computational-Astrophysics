@@ -17,10 +17,12 @@ class TreeCode {
     auto build() -> void;
     auto recursive_build_tree(Node *root) -> void;
     auto tree_walk() -> void;
+    auto tree_step(const double dt) -> void;
     auto recursive_tree_walk(Node *root, const Particle3D &part) -> Eigen::Vector3d;
     auto plot(mglGraph &gr) -> void;
     auto plot_recursive(mglGraph &gr, const Node *node) -> void;
     auto plot_cube(mglGraph &gr, const Node *node) -> void;
+    auto reset_tree() -> void;
 };
 
 #endif // ! TREECODE_H_

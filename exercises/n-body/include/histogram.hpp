@@ -8,7 +8,7 @@
 /// is logarithmically placed.
 class Histogram {
   public:
-    ShellVec m_shells;
+    ShellVec m_shells = {};
 
     explicit Histogram(const int no_bins, const System &p_system, bool do_log = false);
     Histogram(Histogram &&) = default;

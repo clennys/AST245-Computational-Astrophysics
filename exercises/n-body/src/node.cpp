@@ -126,28 +126,28 @@ auto Node::print_cube() -> void {
 auto Node::calc_expansion_factors() -> void {
     static constexpr auto kronecker_delta = [](const int i, const int j) { return i == j ? 1 : 0; };
 
-    m_quadrupole = Eigen::Matrix3d::Zero();
-    m_monopole = 0;
-    m_center_of_mass = Eigen::Vector3d::Zero();
+    this->m_quadrupole = Eigen::Matrix3d::Zero();
+    this->m_monopole = 0;
+    this->m_center_of_mass = Eigen::Vector3d::Zero();
 
-    for (const auto &part : m_particles) {
-        // m_monopole += part.m_mass;
-        // m_center_of_mass += part.m_position * part.m_mass;
-        m_monopole += System::k_non_dim_mass;
-        m_center_of_mass += part.m_position;
+    for (const auto &part : this->m_particles) {
+        {
+            this->m_monopole += part.m_mass;
+            this->m_center_of_mass += part.m_position * part.m_mass;
+        }
     }
 
-    m_center_of_mass /= m_monopole;
+    this->m_center_of_mass /= this->m_monopole;
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            for (const auto &part : m_particles) {
-                Eigen::Vector3d d_part_com = m_center_of_mass - part.m_position;
-                m_quadrupole(i, j) +=
-                    // part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
-                    //                kronecker_delta(i, j) * d_part_com.squaredNorm());
-                    (3 * d_part_com(i) * d_part_com(j) -
-                     kronecker_delta(i, j) * d_part_com.squaredNorm());
+            for (const auto &part : this->m_particles) {
+                {
+                    Eigen::Vector3d d_part_com = this->m_center_of_mass - part.m_position;
+                    m_quadrupole(i, j) +=
+                        part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
+                                       kronecker_delta(i, j) * d_part_com.squaredNorm());
+                }
             }
         }
     }
@@ -185,12 +185,12 @@ auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
 }
 
 Node::~Node() {
-    Logging::dbg("Destructor of Node called");
+    // Logging::dbg("Destructor of Node called");
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 if (m_children(i, j, k)) {
-                    Logging::dbg("children deleted");
+                    // Logging::dbg("children deleted");
                     delete m_children(i, j, k);
                 }
             }

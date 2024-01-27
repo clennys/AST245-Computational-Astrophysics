@@ -7,18 +7,18 @@
 class Shell {
   public:
     /// index of current shell
-    uint m_index;
+    uint m_index = 0;
     /// Lower range, inclusive
-    double m_lower_inc;
+    double m_lower_inc = 0;
     /// Upper range, non-inclusive
-    double m_upper;
+    double m_upper = 0;
     /// Hold the mass of all the particles in the shell
     double m_mass = 0.;
-    double m_volume;
-    double m_density;
+    double m_volume = 0;
+    double m_density = 0;
 
     /// Hold particles that are in the shell
-    PartVec m_particles;
+    PartVec m_particles = {};
 
     explicit Shell(const uint idx, const double lower_inc, const double upper);
     Shell(Shell &&) = default;
@@ -37,6 +37,11 @@ class Shell {
     auto calc_density() const -> double;
 
     auto update_density() -> void;
+
+    /// Return the average force calculated bu direct summation in the shell, projected on the
+    /// center of the spherical distribution
+    auto get_avg_direct_force() const -> double;
+    auto get_avg_tree_force() const -> double;
 
   private:
     // precalculated (by the compiler!) constant for shell volume
