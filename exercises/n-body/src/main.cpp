@@ -3,6 +3,7 @@
 #include "node.hpp"
 #include "particle.hpp"
 #include "system.hpp"
+#include "timer.hpp"
 #include "treecode.hpp"
 
 #include "Eigen/Eigen"
@@ -511,7 +512,13 @@ auto main(const int argc, const char *const argv[]) -> int {
     // ============================================================================================
 
     // plot_do_steps();
-    // tree_code();
+
+    Timer tree_timer = Timer();
+    tree_timer.start();
+    tree_code();
+    tree_timer.stop();
+    tree_timer.print_duration();
+
     // plot_gif_steps();
     // g_system.animate_particles();
 
