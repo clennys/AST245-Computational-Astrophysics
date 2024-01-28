@@ -7,7 +7,7 @@ run-simple: build
 	./build/n-body data/data-red.txt
 
 build:
-	mkdir -p plots
+	mkdir -p plots/png
 	cmake -B build && cmake --build build --parallel
 
 clean:
