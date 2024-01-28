@@ -31,7 +31,7 @@ auto TreeCode::build() -> void {
 }
 
 auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen::Vector3d {
-    auto opening_angle = node->calc_opening_angle(part);
+    const auto opening_angle = node->calc_opening_angle(part);
 
     // TODO: (aver) Properly check for a leaf node, in this case we assume a leaf node consists of a
     // singular particle in the node
