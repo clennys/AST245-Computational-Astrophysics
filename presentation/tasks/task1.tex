@@ -47,7 +47,7 @@
 
 	Poissonian density error with $\sigma = \sqrt{N / B}$:
 	\begin{equation}
-		\rho_{err} = \frac{\sigma}{V_i}
+		\rho_{err} = \sigma \frac{m_p}{V_i}
 		\label{eq:density-error}
 	\end{equation}
 
@@ -56,6 +56,7 @@
 		\item $i$ - Shell index
 		\item $B$ - Number of bins in histogram
 		\item $N$ - Number of Particles
+		\item $m_p$ - Mass of a single particle
 	\end{itemize}}
 
 \end{frame}
@@ -106,46 +107,71 @@
 	% 	\label{eq:direct-force-simple}
 	% \end{equation}
 
-	Taken from \cite{2008gady}, equation (2.227)
+	Softening equation (2.227) from \textit{Galactic Dynamics}:
 	\begin{equation}
 		% \epsilon=-\frac{r_{max}^2+\frac{3}{2} d^2}{\left(r_{max}^2+d^2\right)^{3 / 2}}
 		\epsilon=-\frac{r_{max}^2+\frac{3}{2} a^2}{\left(r_{max}^2+a^2\right)^{3 / 2}}
 		\label{eq:softening}
 	\end{equation}
+	or, as suggested, substituting $a$ from above with:
+	\begin{equation}
+		d=\left[\frac{(4 \pi / 3) R_{hm}^3}{N}\right]^{1 / 3}
+	\end{equation}
 
 	{\footnotesize Where:
 	\begin{itemize}
 		\item $i$ - Particle under consideration
-		\item $\epsilon$ - Softening
+		\item $\epsilon$ - Softening: accurate at $\approx 10^{-5}$
 		\item $r_{max}$ - Maximum radius
-		      % \item $d$ - Mean inter-particle separation, calculated numerically once
+		\item $d$ - Mean inter-particle separation
 		\item $a$ - Scale length
 		\item $G=1$
-	\end{itemize} }
+	\end{itemize}
+	}
 \end{frame}
 
-\begin{frame}{Softening /= 1}
-	\includegraphics[width=0.95\textwidth]{figures/plots/forces_1.png}
+\begin{frame}{Softening /= 1, with $a$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_a_1.png}
 \end{frame}
 
-\begin{frame}{Softening /= 8}
-	\includegraphics[width=0.95\textwidth]{figures/plots/forces_8.png}
+\begin{frame}{Softening /= 8, with $a$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_a_8.png}
 \end{frame}
 
-\begin{frame}{Softening /= 16}
-	\includegraphics[width=0.95\textwidth]{figures/plots/forces_16.png}
+\begin{frame}{Softening /= 16, with $a$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_a_16.png}
 \end{frame}
 
-\begin{frame}{Softening /= 32}
-	\includegraphics[width=0.95\textwidth]{figures/plots/forces_32.png}
+\begin{frame}{Softening /= 32, with $a$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_a_32.png}
 \end{frame}
 
-\begin{frame}{Softening /= 64}
-	\includegraphics[width=0.95\textwidth]{figures/plots/forces_64.png}
+\begin{frame}{Softening /= 64, with $a$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_a_64.png}
 \end{frame}
 
-\begin{frame}{Softening /= 128}
-	\includegraphics[width=0.95\textwidth]{figures/plots/forces_128.png}
+\begin{frame}{Softening /= 128, with $a$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_a_128.png}
+\end{frame}
+
+\begin{frame}{Softening /= 1, with $d$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_d_1.png}
+\end{frame}
+
+\begin{frame}{Softening /= 8, with $d$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_d_8.png}
+\end{frame}
+
+\begin{frame}{Softening /= 32, with $d$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_d_32.png}
+\end{frame}
+
+\begin{frame}{Softening /= 64, with $d$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_d_64.png}
+\end{frame}
+
+\begin{frame}{Softening /= 128, with $d$}
+	\includegraphics[width=0.95\textwidth]{figures/plots/forces_d_128.png}
 \end{frame}
 
 \begin{frame}{Relaxation Timescale}
@@ -172,8 +198,11 @@
 	\end{equation}
 
 	\bigskip
-
-	Using $G = \SI{4.3009172706e-3}{\parsec.\solarmass^{-1}.(\kilo\metre\per\second)^2}$ and $m = \SI{92.4259}{\solarmass}$: \\
+	Using:
+	\begin{itemize}
+		\item $G = \SI{4.3009172706e-3}{\parsec.\solarmass^{-1}.(\kilo\metre\per\second)^2}$
+		\item $m = \SI{92.4259}{\solarmass}$
+	\end{itemize} \bigskip
 
 	Crossing Timescale: $898.302\ yr$ \\
 	Relaxation Timescale: $0.520\ Myr$
