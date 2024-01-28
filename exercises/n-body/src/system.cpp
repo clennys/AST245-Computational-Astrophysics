@@ -376,21 +376,29 @@ auto System::particles_pos_at_step(uint idx)
     }
     return {x, y, z};
 }
+
 auto System::animate_particles() -> void {
-    auto steps = m_particles[0].m_pos_history.size();
-    mglGraph gr(0, 3000, 2000);
     // gr.StartGIF("plots/particles.gif");
+    const auto steps = m_particles[0].m_pos_history.size();
+    mglGraph gr(0, 1440, 900);
+    gr.SetRanges(-this->m_max_rad,
+                 this->m_max_rad,
+                 -this->m_max_rad,
+                 this->m_max_rad,
+                 -this->m_max_rad,
+                 this->m_max_rad);
 
     for (uint i = 0; i < steps; i++) {
         Logging::info("Frame {}", i);
         gr.NewFrame(); // start frame
-        gr.SetRanges(-800, 800, -800, 800, -800, 800);
         gr.Rotate(50, 10);
         gr.Axis();
-        auto pos = particles_pos_at_step(i);
-        mglData x = std::get<0>(pos);
-        mglData y = std::get<1>(pos);
-        mglData z = std::get<2>(pos);
+
+        const auto pos = particles_pos_at_step(i);
+        const mglData x = std::get<0>(pos);
+        const mglData y = std::get<1>(pos);
+        const mglData z = std::get<2>(pos);
+
         gr.Dots(x, y, z, "r");
         gr.EndFrame(); // end frame
         std::stringstream ss;
@@ -398,6 +406,7 @@ auto System::animate_particles() -> void {
            << "frame-" << i << ".png";
         auto filename = ss.str();
         gr.WriteFrame(filename.c_str()); // save frame
+        // gr.EndFrame();
     }
     // gr.CloseGIF();
 }

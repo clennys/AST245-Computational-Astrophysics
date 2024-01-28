@@ -464,7 +464,7 @@ auto main(const int argc, const char *const argv[]) -> int {
     // plot_do_steps();
     // tree_code();
     plot_gif_steps();
-		g_system.animate_particles();
+    g_system.animate_particles();
 
     Logging::info("Successfully quit!");
     return 0;
