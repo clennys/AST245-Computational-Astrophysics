@@ -199,3 +199,12 @@ Node::~Node() {
         }
     }
 }
+
+auto Node::force_error(const Particle3D &part) -> double {
+    auto opening_angle = calc_opening_angle(part);
+    double n_part_node = static_cast<double>(m_particles.size());
+    double mass_node = n_part_node * System::k_dim_mass;
+		// TODO: (dhub) Not sure about squaredNorm here.
+    auto factor = mass_node / part.m_position.squaredNorm() * std::pow(opening_angle, 2);
+    return n_part_node * std::pow(factor, 2);
+}

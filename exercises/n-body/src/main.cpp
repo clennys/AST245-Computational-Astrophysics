@@ -177,6 +177,9 @@ auto tree_code() -> void {
     for (auto tol : tolerance_angles) {
         TreeCode tree = TreeCode(root_cube, g_system.m_particles, tol);
         tree.build();
+        // auto cost = tree.computational_cost(g_system.m_half_mass_rad,
+        // g_system.k_mean_inter_dist); std::cerr << "DEBUGPRINT[2]: main.cpp:251: cost=" << cost <<
+        // std::endl;
 
         mglGraph gr_tree(0, 3000, 2000);
         gr_tree.SetFontSize(2);
@@ -222,6 +225,8 @@ auto tree_code() -> void {
         }
 
         tree.tree_walk();
+        auto err = tree.m_force_error;
+        std::cerr << "DEBUGPRINT[1]: main.cpp:253: err=" << err << std::endl;
         g_system.m_particles = tree.m_particles;
         auto tree_force_hist = Histogram(no_bins, g_system, true);
 
@@ -506,18 +511,18 @@ auto main(const int argc, const char *const argv[]) -> int {
     // - Also explain dependence of force calculation on direct force calculation
     // plot_forces_step_2();
 
-    // g_system.calc_real_relaxation();
+    g_system.calc_real_relaxation();
     // ============================================================================================
     // task 2
     // ============================================================================================
 
     // plot_do_steps();
 
-    Timer tree_timer = Timer();
-    tree_timer.start();
+    // Timer tree_timer = Timer();
+    // tree_timer.start();
     tree_code();
-    tree_timer.stop();
-    tree_timer.print_duration();
+    // tree_timer.stop();
+    // tree_timer.print_duration();
 
     // plot_gif_steps();
     // g_system.animate_particles();

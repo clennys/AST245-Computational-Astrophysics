@@ -378,6 +378,25 @@ auto System::calc_real_relaxation() const -> void {
         Logging::info("Relaxation Timescale at {} yr", t_relax);
 
     Logging::info("==============================================================================");
+
+    Logging::info("==============================================================================");
+    Logging::info("Calculating relaxation timescale with computed factors");
+
+    Logging::info("Half Mass Radius at     {} pc", r_hm * k_scale_factor_dist_pc);
+
+    // WARN: (aver) What to do? Use G=1 or use the real unit of G?
+    const auto v_c_n = std::sqrt(M * 0.5 / r_hm);
+    Logging::info("Circular Velocity at    {} pc / Myr", v_c_n * k_scale_factor_vel_pc_myr);
+    Logging::info("Circular Velocity at    {} km / s", v_c_n * k_scale_factor_vel_km_s);
+
+    Logging::info("Crossing Timescale at   {} Myr", m_t_cross * k_scale_factor_time_myr);
+    Logging::info("Crossing Timescale at   {} yr", m_t_cross * k_scale_factor_time_myr * 1'000'000);
+
+    Logging::info("Relaxation Timescale at {} yr",
+                  m_t_relaxation * k_scale_factor_time_myr * 1'000'000);
+    Logging::info("Relaxation Timescale at {} Myr", m_t_relaxation * k_scale_factor_time_myr);
+
+    Logging::info("==============================================================================");
 }
 
 auto System::particles_pos_at_step(uint idx)

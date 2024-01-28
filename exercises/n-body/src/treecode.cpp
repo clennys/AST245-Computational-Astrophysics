@@ -1,5 +1,6 @@
 #include "treecode.hpp"
 #include "logging.hpp"
+#include <numbers>
 
 #include <cassert>
 
@@ -36,12 +37,14 @@ auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen:
     // TODO: (aver) Properly check for a leaf node, in this case we assume a leaf node consists of a
     // singular particle in the node
     if (node->m_particles.size() < 2) {
-				m_count_ds_inter++;
+        m_count_ds_inter++;
         return part.calc_direct_force_with_part(node->m_particles[0]);
     }
 
     if (opening_angle < m_tolerance_angle) {
-				m_count_mp_inter++;
+        m_count_mp_inter++;
+        // WARN: (dhub) Possible complications if tree-walk is implemented in parallell
+        m_force_error += node->force_error(part);
         return node->multipole_expansion(part);
     } else {
         // Logging::warn("Opening angle ignored with {} particles", node->m_particles.size());
@@ -68,9 +71,9 @@ auto TreeCode::recursive_tree_walk(Node *node, const Particle3D &part) -> Eigen:
 auto TreeCode::tree_walk() -> void {
     // TODO: (aver) add parallelisation, consider, that Node is a complex type, with a parent
     // pointer, simply copying this->m_octree to a new pointer results in a segfault
-        for (auto &part : m_particles) {
-            part.m_tree_force = recursive_tree_walk(m_octree, part);
-        }
+    for (auto &part : m_particles) {
+        part.m_tree_force = recursive_tree_walk(m_octree, part);
+    }
     Logging::info("Tree Walk completed");
 }
 
@@ -173,7 +176,7 @@ auto TreeCode::total_energy(double k_dim_mass) -> void {
                           (m_particles[i].m_position - m_particles[j].m_position).norm();
         }
     }
-		m_pot_energy = pot_energy;
-		m_kin_energy = kin_energy;
-		m_tot_energy = pot_energy - kin_energy;
+    m_pot_energy = pot_energy;
+    m_kin_energy = kin_energy;
+    m_tot_energy = pot_energy - kin_energy;
 }
