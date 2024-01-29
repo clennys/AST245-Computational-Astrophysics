@@ -1,6 +1,28 @@
 \section{Task 2: Tree-Code}
+\begin{frame}[plain]
+	\huge{Tree-Code - Multipole Expansion}
+\end{frame}
 
 \subsection{Multipole Expansion}
+\begin{frame}{Hierarchical Grouping}
+	\begin{columns}
+		\column{.35\linewidth}
+		\begin{itemize}
+			\item Octree
+			\item Axis-aligned cubes
+			\item Every particle is a leaf node
+			\item Empty cubes not stored
+			\item Children have $c^\prime = \frac{1}{2}c$ side length
+		\end{itemize}
+		\column{.65\linewidth}
+		\includegraphics[width=\linewidth]{figures/cube.png}
+	\end{columns}
+\end{frame}
+
+\begin{frame}[plain]{Octree}
+	\includegraphics[width=\textwidth]{figures/plots/treecode.png}
+\end{frame}
+
 \begin{frame}{Multipole Expansion}
 	\begin{columns}
 		\column{.5\linewidth}
@@ -26,7 +48,7 @@
 		      \begin{equation}
 			      \vb{s} = \frac{1}{M}\sum_im_i\vb{x_i}
 		      \end{equation}
-		\item Quadrupole ($\vb{Q} \in \mathbb{R}^{3\times3}$)
+		\item Quadrupole, Tensor calculation ($\vb{Q} \in \mathbb{R}^{3\times3}$)
 		      \begin{equation}
 			      \vb{Q}_{i j}=\sum_k m_k\left[3\left(\mathbf{s}-\mathbf{x}_k\right)_i\left(\mathbf{s}-\mathbf{x}_k\right)_j-\delta_{i j}\left(\mathbf{s}-\mathbf{x}_k\right)^2\right]
 		      \end{equation}
@@ -37,41 +59,22 @@
 	\begin{itemize}
 		\item Potential:
 		      \begin{equation}
-			      \Phi(\mathbf{r_i})=-G\left(\frac{M}{|\mathbf{y}|}+\frac{1}{2} \frac{\mathbf{y}^T \mathbf{Q} \mathbf{y}}{|\mathbf{y}|^5}\right), \quad \mathbf{y}=\mathbf{r}_i-\mathbf{s}
+			      \Phi(\mathbf{r_i})=-G\left[\frac{M}{|\mathbf{y}|}+\frac{1}{2} \frac{\mathbf{y}^T \mathbf{Q} \mathbf{y}}{|\mathbf{y}|^5}\right], \quad \mathbf{y}=\mathbf{r}_i-\mathbf{s}
 		      \end{equation}
 		\item Monopole Force:
 		      \begin{equation}
-			      \vb{F}_M(\vb{r}_i) = - \frac{m_i  M}{ | \vb{y} | ^3}\vb{y}
+			      \vb{F}_M(\vb{r}_i) = -G \frac{m_i  M}{ | \vb{y} | ^3}\vb{y}
 		      \end{equation}
 		\item Quadrupole Force:
 		      \begin{equation}
-			      \vb{F}_Q(\vb{r}_i) = \frac{\vb{Q}\vb{y}}{ | \vb{y} | ^4} - \frac{5}{2} \frac{\vb{y}^T \vb{Q} \vb{y}} { | \vb{y} | ^4} \vb{y}
+			      \vb{F}_Q(\vb{r}_i) = G\left[\frac{\vb{Q}\vb{y}}{ | \vb{y} | ^4} - \frac{5}{2}
+				      \frac{\vb{y}^T \vb{Q} \vb{y}} { | \vb{y} | ^4} \vb{y}\right]
 		      \end{equation}
 		\item Total Force:
 		      \begin{equation}
 			      \vb{F}(\vb{r}_i) = \vb{F}_M + \vb{F}_Q
 		      \end{equation}
 	\end{itemize}
-\end{frame}
-
-
-\begin{frame}{Hierarchical Grouping}
-	\begin{columns}
-		\column{.35\linewidth}
-		\begin{itemize}
-			\item Octree
-			\item Axis-aligned cubes
-			\item Every particle is a leaf node
-			\item Empty cubes not stored
-			\item Children have $c^\prime = \frac{1}{2}c$ side length
-		\end{itemize}
-		\column{.65\linewidth}
-		\includegraphics[width=\linewidth]{figures/cube.png}
-	\end{columns}
-\end{frame}
-
-\begin{frame}[plain]{Octree}
-	\includegraphics[width=\textwidth]{figures/plots/treecode.png}
 \end{frame}
 
 \begin{frame}{When to apply the expansion?}
@@ -114,7 +117,7 @@
 
 	{\footnotesize Where:
 		\begin{itemize}
-			\item $\eta = [0.1, 0.01, 0.001]$
+			\item $\eta = [0.1, 0.01]$
 			\item $t_{cross} \approx 6e^{-6}$
 			\item $df(\Delta t)$ - Direct force summation
 		\end{itemize}
@@ -125,6 +128,12 @@
 
 \end{frame}
 
+\begin{frame}{Force Comparison - Accuracy}
+	Assumption: Direct Force summation considered most accurate. \\
+
+	$\lim\limits_{\theta_c \to 0}$ leads to Direct Summation, often considered in the range of $[0.5, 1.0]$.
+\end{frame}
+
 \begin{frame}[allowframebreaks]{Force Comparison}
 	\includegraphics[width=\textwidth]{figures/plots/tree_force_1.png}
 	\includegraphics[width=\textwidth]{figures/plots/tree_force_0.9.png}
@@ -132,4 +141,20 @@
 	\includegraphics[width=\textwidth]{figures/plots/tree_force_0.5.png}
 	\includegraphics[width=\textwidth]{figures/plots/tree_force_0.25.png}
 	\includegraphics[width=\textwidth]{figures/plots/tree_force_0.1.png}
+\end{frame}
+
+\begin{frame}{Computational Cost Comparison}
+	Direct Force Computation:
+	\begin{itemize}
+		\item $\mathcal{O}(N^2)$ - Comparison of each particle with every other, parallelizable
+		\item $\frac{N^2}{2}$ - Comparison of each particle only with unvisited particles, not parallelizable
+	\end{itemize} \bigskip
+
+
+	Tree Force Computation:
+	\begin{equation}
+		% number of nodes needed for calculating the force on a central particle in the middle of the sphere
+		N_{nodes}=\frac{4 \pi}{\theta_c^3} \ln \frac{R}{d} \propto \frac{\ln N}{\theta_c^3} .
+	\end{equation}
+	Expected $\mathcal{O}(N\log{N})$ but in practice values near $\approx\frac{N^2}{10'000}$
 \end{frame}

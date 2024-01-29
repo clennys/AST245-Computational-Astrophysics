@@ -1,4 +1,8 @@
 \section{Task 1}
+\begin{frame}[plain]
+	\huge{Force \& Density Calculation}
+\end{frame}
+
 \subsection{Step 1: Density Verification}
 
 \begin{frame}{Analytic Hernquist}
@@ -30,8 +34,7 @@
 
 % since all particles have masses of 92. we assumed a mass of 1, to further simplify our equations
 \begin{frame}{Numerical Density Approximation}
-	Logarithmic binning of particles via \texttt{Histogram} class into a \texttt{std::vector} of \texttt{Shell}
-	classes.
+	Logarithmic binning via \texttt{Histogram} class into a \texttt{std::vector} of \texttt{Shell} classes.
 	\begin{equation}
 		i_{log} = |\vb{r}|_{min} (\frac{|\vb{r}|_{max}}{|\vb{r}|_{min}})^{\frac {i_{lin}}{n}}
 	\end{equation}
@@ -66,8 +69,8 @@
 \subsection{Step 2: Direct Force Calculation}
 \begin{frame}{Step 2: Analytic Force Reference}
 
-	Taken from \cite{2008gady}, substituting $M(r)$ from Eq. (\ref{eq:cumulative-mass-distribution}) and
-	reducing:
+	Assuming a Spherical System \cite{2008gady}, substituting $M(r)$ from Eq.
+	(\ref{eq:cumulative-mass-distribution}) and reducing:
 	\begin{equation}
 		F(r) = - \frac{GM(r)}{r^2} \Rightarrow F(r) = - \frac{M}{(r+a)^2}
 	\end{equation}
@@ -104,6 +107,23 @@
 		\item $d$ - Mean inter-particle separation
 		\item $a$ - Scale length
 		\item $G=1$
+	\end{itemize}
+	}
+\end{frame}
+
+\begin{frame}{Step 2: Direct Force Calculation}
+	Vectors converted to scalars by \textbf{normalizing} the Force vector and \textbf{projecting} it on the center
+	for numeric approximation and analytic comparison:
+	\begin{equation}
+		F_{avg}^b = \sum^{N_{Bin}}_{i=0} \frac{\vb{r}_i\cdot \vb{F}_i}{|\vb{r}_i|}
+	\end{equation}
+
+	{\footnotesize Where:
+	\begin{itemize}
+		\item $N_{Bin}$ - Number of particles in a bin or shell
+		\item $\vb{r}_i$ - Position vector of particle i
+		\item $\vb{F}_i$ - Force Vector of particle i
+		\item $F_{avg}^b$ - Average force on bin $b$
 	\end{itemize}
 	}
 \end{frame}

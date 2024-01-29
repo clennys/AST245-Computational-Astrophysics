@@ -1,7 +1,25 @@
 \section{Introduction} % Sections are added in order to organize your presentation into discrete blocks, all sections and subsections are automatically output to the table of contents as an overview of the talk but NOT output in the presentation as separate slides
 
 \begin{frame}{Preliminaries}
-	C++ based implementation using \texttt{OpenMP} and \texttt{Eigen3}.
+	\begin{columns}[T] % The "T" option aligns the columns' content at the top
+		% Left column
+		\begin{column}{0.5\textwidth} % Adjust the width of the column as you like
+			\begin{itemize}
+				\item C++ based implementation using \texttt{OpenMP} and \texttt{Eigen3}.
+				\item \texttt{main.cpp} as center of application
+				\item \texttt{particle.c/hpp} Holds Particle3D class with relevant members
+				\item \texttt{data.c/hpp} reads in file
+				\item \texttt{histogram.c/hpp} and \texttt{shell.c/hpp} handle histogram creation and binning
+				\item \texttt{system.c/hpp} Relevant and global constants and factors
+				\item \texttt{treecode.c/hpp} Multipole expansion related class and methods
+			\end{itemize}
+		\end{column}
+
+		% Right column
+		\begin{column}{0.5\textwidth} % Adjust the width of the column as you like
+			\includegraphics[width=\textwidth]{figures/source-tree}
+		\end{column}
+	\end{columns}
 \end{frame}
 
 \begin{frame}{Units and Dimension}
