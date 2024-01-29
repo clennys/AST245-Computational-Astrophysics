@@ -115,7 +115,7 @@
 	Vectors converted to scalars by \textbf{normalizing} the Force vector and \textbf{projecting} it on the center
 	for numeric approximation and analytic comparison:
 	\begin{equation}
-		F_{avg}^b = \sum^{N_{Bin}}_{i=0} \frac{\vb{r}_i\cdot \vb{F}_i}{|\vb{r}_i|}
+		F_{avg}^b = \frac{1}{N_{Bin}} \sum^{N_{Bin}}_{i=0} \frac{\vb{r}_i\cdot \vb{F}_i}{|\vb{r}_i|}
 	\end{equation}
 
 	{\footnotesize Where:
@@ -203,4 +203,3 @@
 	Relaxation Timescale: $0.520\ Myr$
 
 \end{frame}
-

@@ -5,12 +5,13 @@
 		% Left column
 		\begin{column}{0.5\textwidth} % Adjust the width of the column as you like
 			\begin{itemize}
-				\item C++ based implementation using \texttt{OpenMP} and \texttt{Eigen3}.
+				\item C++ based implementation using \texttt{OpenMP}, \texttt{MathGL} and \texttt{Eigen3}.
 				\item \texttt{main.cpp} as center of application
 				\item \texttt{particle.c/hpp} Holds Particle3D class with relevant members
 				\item \texttt{data.c/hpp} reads in file
 				\item \texttt{histogram.c/hpp} and \texttt{shell.c/hpp} handle histogram creation and binning
-				\item \texttt{system.c/hpp} Relevant and global constants and factors
+				\item \texttt{system.c/hpp} Global constants, factors and logic for direct
+				      summation.
 				\item \texttt{treecode.c/hpp} Multipole expansion related class and methods
 			\end{itemize}
 		\end{column}
