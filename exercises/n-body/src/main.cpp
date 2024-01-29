@@ -99,19 +99,12 @@ auto plot_forces_step_2() {
     constexpr auto no_bins = 50;
 
 // This should be a one time calculation and then save it in the System class
-#if 1
+#if 0
     auto mean_inter_idst = g_system.precalc_mean_inter_part_dist();
     Logging::info("Mean inter-particle distance: {}", mean_inter_idst);
-
     // use the half mass radius as requested in the instructions
-    auto analytic_mipd = (((4 * std::numbers::pi) / 3) * g_system.m_half_mass_rad *
-                          g_system.m_half_mass_rad * g_system.m_half_mass_rad);
-    analytic_mipd /= g_system.system_int_size() * .5;
-    analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
-
-    System::s_softening_length = analytic_mipd;
-
-    Logging::info("Analytic MIPD: {}", analytic_mipd);
+    System::s_softening_length = g_system.get_analytic_mipd();
+    Logging::info("Analytic MIPD: {}", g_system.get_analytic_mipd());
 #endif
 
     std::vector<double> analytic_force;
@@ -131,7 +124,7 @@ auto plot_forces_step_2() {
         std::vector<double> idx;
 
         // System::s_softening = System::s_softening_length / div;
-        System::s_softening = analytic_mipd / div;
+        System::s_softening = g_system.get_analytic_mipd() / div;
 
         // Initialize forces, with direct calculation
         g_system.precalc_direct_initial_force();
@@ -262,7 +255,8 @@ auto tree_code() -> void {
     gr.AddLegend(std::format("Tree Force with \\theta: {}", tolerance_angle).c_str(), "r.");
 
     gr.Plot(x_2, direct_y, "b.");
-    gr.AddLegend(std::format("Direct Force with \\epsilon: {:e}", System::s_softening).c_str(), "b.");
+    gr.AddLegend(std::format("Direct Force with \\epsilon: {:e}", System::s_softening).c_str(),
+                 "b.");
 
     gr.Plot(x_2, hern_y, "q");
     gr.AddLegend(std::format("Hernquist Analytical Force", System::s_softening).c_str(), "q");
@@ -278,26 +272,27 @@ auto plot_gif_steps_tree() {
     constexpr auto tau = 0.01;
     const auto kTime = g_system.m_t_cross * 2;
     const auto kDeltaTime = tau * g_system.m_t_cross;
+    const auto no_steps = kTime / kDeltaTime;
 
-    g_system.reset_system();
-    System::s_softening = System::s_softening_length / 200;
-    g_system.precalc_direct_initial_force();
+    // g_system.reset_system();
+    // System::s_softening = System::s_softening_length / 200;
+    // g_system.precalc_direct_initial_force();
 
     constexpr auto tolerance_angle = 0.1;
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
     auto tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
 
     mglGraph gr(0, 1440, 900);
-    gr.StartGIF("steps_tree_forces.gif");
+    gr.StartGIF(std::format("tree_forces_{}_eta_{}_soft.gif", t_factor, eta).c_str());
 
     tree.build();
     tree.tree_walk();
 
+    int step = 0;
     for (double t = 0.; t < kTime; t += kDeltaTime) {
-        Logging::info("t = {}", t);
+        Logging::info("step: {}/{}, t: {:e}", step, no_steps, t);
         gr.NewFrame();
 
-        // std::vector<double> numeric_dens;
         std::vector<double> tree_force;
         std::vector<double> idx;
 
@@ -323,22 +318,21 @@ auto plot_gif_steps_tree() {
         gr.SetCoor(mglLogX);
         gr.Axis();
 
-        gr.Label('x', "Radius [l]", 0);
+        gr.Label('x', "Radius", 0);
         gr.Label('y', "Force", 0);
 
         gr.Plot(x, nforce, "r.");
-        gr.AddLegend("Numeric", "r.");
+        gr.AddLegend(std::format("Tree Force with \\theta: {}", tolerance_angle).c_str(), "r.");
 
         // Add a text box at the top right
-        gr.Title(std::format("t: {}", t).c_str());
-
+        gr.Title(std::format("Frame: {}\nt: {:e}", step, t).c_str());
         gr.Legend();
-
         gr.EndFrame();
 
         tree.reset_tree();
         tree.build();
         tree.tree_step(kDeltaTime);
+        step++;
     }
 
     gr.CloseGIF();
@@ -351,11 +345,12 @@ auto plot_gif_steps() {
     constexpr auto eta = 0.001;
     const auto kTime = g_system.m_t_cross * t_factor;
     const auto kDeltaTime = eta * g_system.m_t_cross;
+    const auto no_steps = kTime / kDeltaTime;
 
     constexpr auto div = 256.;
 
     g_system.reset_system();
-    System::s_softening = System::s_softening_length / div;
+    System::s_softening = g_system.get_analytic_mipd() / div;
     g_system.precalc_direct_initial_force();
 
     mglGraph gr(0, 1440, 900);

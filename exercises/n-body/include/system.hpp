@@ -128,6 +128,8 @@ class System {
     auto particles_pos_at_step(uint idx)
         -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>;
 
+    auto get_analytic_mipd() const -> double;
+
   private:
     /// Calculate runtime constants for system deployment
     auto precalc_consts() -> void;

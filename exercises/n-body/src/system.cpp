@@ -424,3 +424,12 @@ auto System::animate_particles() -> void {
     }
     // gr.CloseGIF();
 }
+
+auto System::get_analytic_mipd() const -> double {
+    auto analytic_mipd = (((4 * std::numbers::pi) / 3) * this->m_half_mass_rad *
+                          this->m_half_mass_rad * this->m_half_mass_rad);
+    analytic_mipd /= this->system_int_size();
+    analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
+    std::cerr << "DEBUGPRINT[1]: system.cpp:382: analytic_mipd=" << analytic_mipd << std::endl;
+    return analytic_mipd;
+}
