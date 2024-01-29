@@ -392,20 +392,21 @@ auto System::particles_pos_at_step(uint idx)
 }
 
 auto System::animate_particles() -> void {
-    // gr.StartGIF("plots/particles.gif");
     const auto steps = m_particles[0].m_pos_history.size();
     mglGraph gr(0, 1440, 900);
+    gr.StartGIF("plots/particles.gif");
+
     gr.SetRanges(-this->m_max_rad,
                  this->m_max_rad,
                  -this->m_max_rad,
                  this->m_max_rad,
                  -this->m_max_rad,
                  this->m_max_rad);
+    gr.Rotate(50, 10);
 
     for (uint i = 0; i < steps; i++) {
-        Logging::info("Frame {}", i);
+        Logging::info("Processing frame {}", i);
         gr.NewFrame(); // start frame
-        gr.Rotate(50, 10);
         gr.Axis();
 
         const auto pos = particles_pos_at_step(i);
@@ -414,15 +415,15 @@ auto System::animate_particles() -> void {
         const mglData z = std::get<2>(pos);
 
         gr.Dots(x, y, z, "r");
-        gr.EndFrame(); // end frame
-        std::stringstream ss;
-        ss << "plots/animation/"
-           << "frame-" << i << ".png";
-        auto filename = ss.str();
-        gr.WriteFrame(filename.c_str()); // save frame
-        // gr.EndFrame();
+
+        // std::stringstream ss;
+        // ss << "plots/animation/"
+        //    << "frame-" << i << ".png";
+        // auto filename = ss.str();
+        // gr.WriteFrame(filename.c_str()); // save frame
+        gr.EndFrame();
     }
-    // gr.CloseGIF();
+    gr.CloseGIF();
 }
 
 auto System::get_analytic_mipd() const -> double {
@@ -430,6 +431,5 @@ auto System::get_analytic_mipd() const -> double {
                           this->m_half_mass_rad * this->m_half_mass_rad);
     analytic_mipd /= this->system_int_size();
     analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
-    std::cerr << "DEBUGPRINT[1]: system.cpp:382: analytic_mipd=" << analytic_mipd << std::endl;
     return analytic_mipd;
 }

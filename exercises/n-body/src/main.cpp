@@ -268,10 +268,11 @@ auto tree_code() -> void {
 
 /// Creates a GIF showing the variances of the force distribution integrated via tree
 auto plot_gif_steps_tree() {
-    constexpr auto no_bins = 50;
-    constexpr auto tau = 0.01;
-    const auto kTime = g_system.m_t_cross * 2;
-    const auto kDeltaTime = tau * g_system.m_t_cross;
+    constexpr static auto no_bins = 50;
+    constexpr static auto t_factor = 2;
+    constexpr auto eta = 0.01;
+    const auto kTime = g_system.m_t_cross * t_factor;
+    const auto kDeltaTime = eta * g_system.m_t_cross;
     const auto no_steps = kTime / kDeltaTime;
 
     // g_system.reset_system();
@@ -341,8 +342,8 @@ auto plot_gif_steps_tree() {
 /// Creates a GIF showing the variances of the force distribution integrated via direct calculation
 auto plot_gif_steps() {
     constexpr static auto no_bins = 50;
-    constexpr static auto t_factor = 2;
-    constexpr auto eta = 0.001;
+    constexpr static auto t_factor = 5;
+    constexpr auto eta = 0.01;
     const auto kTime = g_system.m_t_cross * t_factor;
     const auto kDeltaTime = eta * g_system.m_t_cross;
     const auto no_steps = kTime / kDeltaTime;
@@ -359,7 +360,7 @@ auto plot_gif_steps() {
 
     int step = 1;
     for (double t = 0.; t < kTime; t += kDeltaTime) {
-        Logging::info("step: {}, t: {:e}", step, t);
+        Logging::info("step: {}/{}, t: {:e}", step, no_steps, t);
         gr.NewFrame();
 
         std::vector<double> numeric_dens;
@@ -388,7 +389,7 @@ auto plot_gif_steps() {
         gr.SetCoor(mglLogX);
         gr.Axis();
 
-        gr.Label('x', "Radius [l]", 0);
+        gr.Label('x', "Radius", 0);
         gr.Label('y', "Force", 0);
 
         gr.Plot(x, nforce, "r.");
