@@ -59,12 +59,6 @@ auto System::init_system(const std::string_view &path_name) -> void {
     //     -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
     //                     System::k_mean_inter_dist * System::k_mean_inter_dist));
 
-    // System::s_softening_length =
-    //     -(this->m_max_rad * this->m_max_rad +
-    //       (3. / 2.) * System::k_mean_inter_dist * System::k_mean_inter_dist) /
-    //     std::pow(std::sqrt(this->m_max_rad * this->m_max_rad +
-    //                        System::k_mean_inter_dist * System::k_mean_inter_dist),
-    //              3);
 
     System::s_softening_length =
         -(this->m_half_mass_rad * this->m_half_mass_rad +
@@ -72,6 +66,7 @@ auto System::init_system(const std::string_view &path_name) -> void {
         std::pow(std::sqrt(this->m_half_mass_rad * this->m_half_mass_rad +
                            System::k_mean_inter_dist * System::k_mean_inter_dist),
                  3);
+    // System::s_softening_length = k_mean_inter_dist;
 
     System::s_softening = s_softening_length;
 

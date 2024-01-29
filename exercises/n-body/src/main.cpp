@@ -164,6 +164,7 @@ auto plot_forces_step_2() {
         gr.Plot(x, nforce, "r.");
         gr.AddLegend("Numeric", "r.");
 
+        gr.Title(std::format("Softening: {}", System::s_softening ).c_str());
         gr.Legend();
         gr.WriteJPEG(std::format("plots/forces_{}.jpg", div).c_str());
         gr.WritePNG(std::format("plots/png/forces_{}.png", div).c_str());
@@ -509,7 +510,7 @@ auto main(const int argc, const char *const argv[]) -> int {
     // - We still need to do a comparison between different softeining values and discuss their
     //      significance
     // - Also explain dependence of force calculation on direct force calculation
-    // plot_forces_step_2();
+    plot_forces_step_2();
 
     g_system.calc_real_relaxation();
     // ============================================================================================
@@ -523,7 +524,6 @@ auto main(const int argc, const char *const argv[]) -> int {
     tree_code();
     // tree_timer.stop();
     // tree_timer.print_duration();
-
     // plot_gif_steps();
     // g_system.animate_particles();
 

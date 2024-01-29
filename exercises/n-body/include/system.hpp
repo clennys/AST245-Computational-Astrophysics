@@ -19,9 +19,9 @@ class System {
     static constexpr double k_G = 4.3009172706e-3;
 
     /// Precalculated Mean inter-particle distance
-    static constexpr double k_mean_inter_dist = 4.023775510528517;
+    static constexpr double k_mean_inter_dist = 0.0112012;
     /// Array of divisors to use for softening
-    static constexpr auto softening_divisors = {1., 8., 32., 64., 128., 256., 512., 1024.};
+    static constexpr auto softening_divisors = {0.1, 0.5, 0.8, 1., 10., 20., 50., 100., 200., 500.};
     /// Softening length to be applied in Force calculcation. Made static, in order for other
     /// Classes to access it
     static double s_softening_length;
