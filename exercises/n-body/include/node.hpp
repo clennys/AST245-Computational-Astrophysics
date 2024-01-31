@@ -54,6 +54,7 @@ class Node {
     auto create_sub_bounding_cube(Eigen::Vector3d origin, double cube_side_length) -> BoundingCube;
     auto in_bounding_box(const BoundingCube cube, const Particle3D &part) -> bool;
     auto print_cube() -> void;
+		auto force_error(const Particle3D &part) -> double;
 };
 
 #endif // ! NODE_H_
