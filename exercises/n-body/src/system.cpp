@@ -59,12 +59,6 @@ auto System::init_system(const std::string_view &path_name) -> void {
     //     -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
     //                     System::k_mean_inter_dist * System::k_mean_inter_dist));
 
-    // System::s_softening_length =
-    //     -(this->m_max_rad * this->m_max_rad +
-    //       (3. / 2.) * System::k_mean_inter_dist * System::k_mean_inter_dist) /
-    //     std::pow(std::sqrt(this->m_max_rad * this->m_max_rad +
-    //                        System::k_mean_inter_dist * System::k_mean_inter_dist),
-    //              3);
 
     System::s_softening_length =
         -(this->m_half_mass_rad * this->m_half_mass_rad +
@@ -72,6 +66,7 @@ auto System::init_system(const std::string_view &path_name) -> void {
         std::pow(std::sqrt(this->m_half_mass_rad * this->m_half_mass_rad +
                            System::k_mean_inter_dist * System::k_mean_inter_dist),
                  3);
+    // System::s_softening_length = k_mean_inter_dist;
 
     System::s_softening = s_softening_length;
 
@@ -376,6 +371,25 @@ auto System::calc_real_relaxation() const -> void {
         Logging::info("Relaxation Timescale at {} Myr", t_relax / 1'000'000);
     else
         Logging::info("Relaxation Timescale at {} yr", t_relax);
+
+    Logging::info("==============================================================================");
+
+    Logging::info("==============================================================================");
+    Logging::info("Calculating relaxation timescale with computed factors");
+
+    Logging::info("Half Mass Radius at     {} pc", r_hm * k_scale_factor_dist_pc);
+
+    // WARN: (aver) What to do? Use G=1 or use the real unit of G?
+    const auto v_c_n = std::sqrt(M * 0.5 / r_hm);
+    Logging::info("Circular Velocity at    {} pc / Myr", v_c_n * k_scale_factor_vel_pc_myr);
+    Logging::info("Circular Velocity at    {} km / s", v_c_n * k_scale_factor_vel_km_s);
+
+    Logging::info("Crossing Timescale at   {} Myr", m_t_cross * k_scale_factor_time_myr);
+    Logging::info("Crossing Timescale at   {} yr", m_t_cross * k_scale_factor_time_myr * 1'000'000);
+
+    Logging::info("Relaxation Timescale at {} yr",
+                  m_t_relaxation * k_scale_factor_time_myr * 1'000'000);
+    Logging::info("Relaxation Timescale at {} Myr", m_t_relaxation * k_scale_factor_time_myr);
 
     Logging::info("==============================================================================");
 }

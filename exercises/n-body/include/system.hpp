@@ -17,15 +17,29 @@ class System {
     static constexpr double k_dim_mass = 92.4259;
     /// Graviational Constant in pc * (km/s)^2 / M_\odot
     static constexpr double k_G = 4.3009172706e-3;
+
     /// Precalculated Mean inter-particle distance
-    static constexpr double k_mean_inter_dist = 4.023775510528517;
+    static constexpr double k_mean_inter_dist = 0.0112012;
     /// Array of divisors to use for softening
-    static constexpr auto softening_divisors = {1., 8., 32., 64., 128., 256., 512., 1024.};
+    static constexpr auto softening_divisors = {0.1, 0.5, 0.8, 1., 10., 20., 50., 100., 200., 500.};
     /// Softening length to be applied in Force calculcation. Made static, in order for other
     /// Classes to access it
     static double s_softening_length;
     /// `s_softening_length` is divided by `softening_divisors` to get a valid softening
     static double s_softening;
+		
+		/// Scale factor for time in Myr
+    static constexpr double k_scale_factor_time_myr = 14.91;
+		/// Scale factor for mass in Solar Mass
+    static constexpr double k_scale_factor_mass_sm = 1.;
+		/// Scale factor for distances in parsecs
+    static constexpr double k_scale_factor_dist_pc = 1.;
+		/// Scale factor for velocity in parsecs/myr
+    static constexpr double k_scale_factor_vel_pc_myr = 0.067;
+		/// Scale factor for acceleration in parsecs/myr^2
+    static constexpr double k_scale_factor_acc_pc_myr2 = 0.004;
+/// Scale factor for velocity in parsecs/myr
+    static constexpr double k_scale_factor_vel_km_s = 0.065;
 
     //=============================================================================================
     // Regular member variables

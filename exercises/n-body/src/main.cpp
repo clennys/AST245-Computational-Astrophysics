@@ -3,6 +3,7 @@
 #include "node.hpp"
 #include "particle.hpp"
 #include "system.hpp"
+#include "timer.hpp"
 #include "treecode.hpp"
 
 #include "Eigen/Eigen"
@@ -163,6 +164,7 @@ auto plot_forces_step_2() {
         gr.Plot(x, nforce, "r.");
         gr.AddLegend("Numeric", "r.");
 
+        gr.Title(std::format("Softening: {}", System::s_softening ).c_str());
         gr.Legend();
         gr.WriteJPEG(std::format("plots/forces_{}.jpg", div).c_str());
         gr.WritePNG(std::format("plots/png/forces_{}.png", div).c_str());
@@ -176,6 +178,9 @@ auto tree_code() -> void {
     for (auto tol : tolerance_angles) {
         TreeCode tree = TreeCode(root_cube, g_system.m_particles, tol);
         tree.build();
+        // auto cost = tree.computational_cost(g_system.m_half_mass_rad,
+        // g_system.k_mean_inter_dist); std::cerr << "DEBUGPRINT[2]: main.cpp:251: cost=" << cost <<
+        // std::endl;
 
         mglGraph gr_tree(0, 3000, 2000);
         gr_tree.SetFontSize(2);
@@ -221,6 +226,8 @@ auto tree_code() -> void {
         }
 
         tree.tree_walk();
+        auto err = tree.m_force_error;
+        std::cerr << "DEBUGPRINT[1]: main.cpp:253: err=" << err << std::endl;
         g_system.m_particles = tree.m_particles;
         auto tree_force_hist = Histogram(no_bins, g_system, true);
 
@@ -503,15 +510,20 @@ auto main(const int argc, const char *const argv[]) -> int {
     // - We still need to do a comparison between different softeining values and discuss their
     //      significance
     // - Also explain dependence of force calculation on direct force calculation
-    // plot_forces_step_2();
+    plot_forces_step_2();
 
-    // g_system.calc_real_relaxation();
+    g_system.calc_real_relaxation();
     // ============================================================================================
     // task 2
     // ============================================================================================
 
     // plot_do_steps();
-    // tree_code();
+
+    // Timer tree_timer = Timer();
+    // tree_timer.start();
+    tree_code();
+    // tree_timer.stop();
+    // tree_timer.print_duration();
     // plot_gif_steps();
     // g_system.animate_particles();
 

@@ -11,11 +11,12 @@ class TreeCode {
     PartVec m_particles;
     int m_height = -1;
     double m_tolerance_angle;
-		int m_count_mp_inter = 0;
-		int m_count_ds_inter = 0;
-		double m_pot_energy = 0.;
-		double m_kin_energy = 0.;
-		double m_tot_energy = 0.;
+    int m_count_mp_inter = 0;
+    int m_count_ds_inter = 0;
+    double m_pot_energy = 0.;
+    double m_kin_energy = 0.;
+    double m_tot_energy = 0.;
+    double m_force_error = 0;
 
     explicit TreeCode(BoundingCube root_cube, PartVec particles, double tolerance_angle);
     ~TreeCode();
@@ -29,7 +30,7 @@ class TreeCode {
     auto plot_cube(mglGraph &gr, const Node *node) -> void;
     auto reset_tree() -> void;
     auto computational_cost(double radius, double factor) -> double;
-		auto total_energy(double k_dim_mass) -> void;
+    auto total_energy(double k_dim_mass) -> void;
 };
 
 #endif // ! TREECODE_H_

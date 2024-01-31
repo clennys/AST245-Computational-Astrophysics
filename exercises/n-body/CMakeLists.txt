@@ -68,6 +68,7 @@ add_executable(${PROJECT_NAME}
     src/system.cpp
     src/treecode.cpp
 	src/node.cpp
+	src/timer.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
