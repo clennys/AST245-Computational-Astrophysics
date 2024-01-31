@@ -2,12 +2,11 @@
 #include "data.hpp"
 #include "histogram.hpp"
 #include "logging.hpp"
-#include "mgl2/mgl.h"
 #include "node.hpp"
 #include "particle.hpp"
-#include <sstream>
 
 #include "Eigen/Eigen"
+#include "mgl2/mgl.h"
 
 #include <algorithm>
 #include <cassert>
@@ -18,6 +17,7 @@
 #include <numeric>
 #include <ranges>
 #include <tuple>
+#include <unistd.h>
 
 // set default softening
 double System::s_softening = 0.;
@@ -432,4 +432,35 @@ auto System::get_analytic_mipd() const -> double {
     analytic_mipd /= this->system_int_size();
     analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
     return analytic_mipd;
+}
+
+auto System::init_energy() -> void {
+    double pot_energy = 0.;
+    double kin_energy = 0.;
+    for (uint i = 0; i < m_particles.size(); i++) {
+        kin_energy += 0.5 * k_dim_mass * m_particles[i].m_velocity.squaredNorm();
+        for (uint j = i + 1; j < m_particles.size(); j++) {
+            pot_energy += k_dim_mass * k_dim_mass /
+                          (m_particles[i].m_position - m_particles[j].m_position).norm();
+        }
+    }
+    m_init_energy = kin_energy - pot_energy;
+}
+
+auto System::total_energy() -> void {
+    double pot_energy = 0.;
+    double kin_energy = 0.;
+    for (uint i = 0; i < m_particles.size(); i++) {
+        kin_energy += 0.5 * k_dim_mass * m_particles[i].m_velocity.squaredNorm();
+        for (uint j = i + 1; j < m_particles.size(); j++) {
+            pot_energy += k_dim_mass * k_dim_mass /
+                          (m_particles[i].m_position - m_particles[j].m_position).norm();
+        }
+    }
+    m_pot_energy = pot_energy;
+    m_kin_energy = kin_energy;
+    m_tot_energy = kin_energy - pot_energy;
+    m_delta_energy = (m_tot_energy - m_init_energy) / std::abs(m_init_energy);
+    // std::cerr << "DEBUGPRINT[1]: system.cpp:390: m_tot_energy=" << m_tot_energy << "  " <<
+    // std::abs(m_tot_energy) << std::endl;
 }

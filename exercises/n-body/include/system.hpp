@@ -39,6 +39,12 @@ class System {
     double m_softening = 0.;
     double m_t_relaxation = 0.;
     double m_t_cross = 0.;
+    double m_pot_energy = 0.;
+    double m_kin_energy = 0.;
+    double m_tot_energy = 0.;
+    double m_virial_eq = 0.;
+    double m_delta_energy = 0.;
+    double m_init_energy = 0.;
 
     //=============================================================================================
     // Ctors, Dtors, etc.
@@ -129,6 +135,10 @@ class System {
         -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>;
 
     auto get_analytic_mipd() const -> double;
+
+    auto total_energy() -> void;
+
+    auto init_energy() -> void;
 
   private:
     /// Calculate runtime constants for system deployment

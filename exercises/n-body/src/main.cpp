@@ -172,96 +172,100 @@ auto plot_forces_step_2() {
 /// Create an octree and calculate the forces by running multipole expansion on the tree
 auto tree_code() -> void {
     BoundingCube root_cube = g_system.calc_overall_bounding_cube();
-    double tolerance_angle = 0.1;
-    TreeCode tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
-    tree.build();
+    auto tolerance_angles = {0.1, 0.3, 0.5, 0.7, 0.9};
+    for (auto tol : tolerance_angles) {
+        TreeCode tree = TreeCode(root_cube, g_system.m_particles, tol);
+        tree.build();
 
-    mglGraph gr_tree(0, 3000, 2000);
-    gr_tree.SetFontSize(2);
+        mglGraph gr_tree(0, 3000, 2000);
+        gr_tree.SetFontSize(2);
 
-    // set plot parameters
-    gr_tree.Rotate(50, 10); // Adjust for a better viewing angle
-    gr_tree.SetRanges(-800, 800, -800, 800, -800, 800);
-    gr_tree.Axis();
-    tree.plot(gr_tree);
-    auto transform = g_system.transform_vectors();
-    mglData x = std::get<0>(transform);
-    mglData y = std::get<1>(transform);
-    mglData z = std::get<2>(transform);
-    gr_tree.Dots(x, y, z, "r");
-    gr_tree.WriteFrame(std::format("plots/treecode_{}.jpg", tolerance_angle).c_str());
-    gr_tree.WriteFrame(std::format("plots/png/treecode_{}.png", tolerance_angle).c_str());
+        // set plot parameters
+        gr_tree.Rotate(50, 10); // Adjust for a better viewing angle
+        gr_tree.SetRanges(-800, 800, -800, 800, -800, 800);
+        gr_tree.Axis();
+        tree.plot(gr_tree);
+        auto transform = g_system.transform_vectors();
+        mglData x = std::get<0>(transform);
+        mglData y = std::get<1>(transform);
+        mglData z = std::get<2>(transform);
+        gr_tree.Dots(x, y, z, "r");
+        gr_tree.WriteFrame(std::format("plots/treecode_{}.jpg", tol).c_str());
+        gr_tree.WriteFrame(std::format("plots/png/treecode_{}.png", tol).c_str());
 
-    constexpr auto no_bins = 50;
-    std::vector<double> tree_force;
-    std::vector<double> direct_force;
-    std::vector<double> analytic_force;
-    std::vector<double> idx;
+        constexpr auto no_bins = 50;
+        std::vector<double> tree_force;
+        std::vector<double> direct_force;
+        std::vector<double> analytic_force;
+        std::vector<double> idx;
 
-    for (int i = 0; i <= no_bins; i++) {
-        auto rad = g_system.convert_lin_to_log(no_bins, i);
-        auto val = g_system.newton_force(rad);
-        analytic_force.emplace_back(System::fit_log_to_plot(val));
+        for (int i = 0; i <= no_bins; i++) {
+            auto rad = g_system.convert_lin_to_log(no_bins, i);
+            auto val = g_system.newton_force(rad);
+            analytic_force.emplace_back(System::fit_log_to_plot(val));
+        }
+
+        auto analytic_mipd = (((4 * std::numbers::pi) / 3) * g_system.m_half_mass_rad *
+                              g_system.m_half_mass_rad * g_system.m_half_mass_rad);
+        analytic_mipd /= g_system.system_int_size() * .5;
+        analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
+
+        System::s_softening = analytic_mipd / 200;
+        g_system.precalc_direct_initial_force();
+
+        auto dir_force_hist = Histogram(no_bins, g_system, true);
+
+        for (const auto &shell : dir_force_hist.m_shells) {
+            auto df = shell.get_avg_direct_force();
+            direct_force.emplace_back(System::fit_log_to_plot(df));
+        }
+
+        tree.tree_walk();
+        g_system.m_particles = tree.m_particles;
+        auto tree_force_hist = Histogram(no_bins, g_system, true);
+
+        for (const auto &shell : tree_force_hist.m_shells) {
+            auto tf = shell.get_avg_tree_force();
+            tree_force.emplace_back(System::fit_log_to_plot(tf));
+            idx.emplace_back(shell.m_lower_inc);
+        }
+
+        mglGraph gr(0, 3000, 2000);
+        gr.SetFontSize(2);
+
+        mglData x_2 = idx;
+        mglData tree_y = tree_force;
+        mglData direct_y = direct_force;
+        mglData hern_y = analytic_force;
+
+        const auto y_min = std::min(tree_y.Minimal(), direct_y.Minimal());
+        const auto y_max = std::max(tree_y.Maximal(), direct_y.Maximal());
+
+        gr.SetRange('x', x_2);
+        gr.SetRange('y', y_min, y_max);
+
+        gr.SetCoor(mglLogX);
+        gr.Axis();
+
+        gr.Label('x', "Radius", 0);
+        gr.Label('y', "Force", 0);
+
+        gr.Plot(x_2, tree_y, "r.");
+        gr.AddLegend(std::format("Tree Force with \\theta: {}", tol).c_str(), "r.");
+
+        gr.Plot(x_2, direct_y, "b.");
+        gr.AddLegend(std::format("Direct Force with \\epsilon: {:e}", System::s_softening).c_str(),
+                     "b.");
+
+        gr.Plot(x_2, hern_y, "q");
+        gr.AddLegend(std::format("Hernquist Analytical Force", System::s_softening).c_str(), "q");
+
+        gr.Legend();
+        gr.WriteFrame(std::format("plots/tree_force_{}.jpg", tol).c_str());
+        gr.WriteFrame(std::format("plots/png/tree_force_{}.png", tol).c_str());
+
+        tree.reset_tree();
     }
-
-    auto analytic_mipd = (((4 * std::numbers::pi) / 3) * g_system.m_half_mass_rad *
-                          g_system.m_half_mass_rad * g_system.m_half_mass_rad);
-    analytic_mipd /= g_system.system_int_size() * .5;
-    analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
-
-    System::s_softening = analytic_mipd / 200;
-    g_system.precalc_direct_initial_force();
-
-    auto dir_force_hist = Histogram(no_bins, g_system, true);
-
-    for (const auto &shell : dir_force_hist.m_shells) {
-        auto df = shell.get_avg_direct_force();
-        direct_force.emplace_back(System::fit_log_to_plot(df));
-    }
-
-    tree.tree_walk();
-    g_system.m_particles = tree.m_particles;
-    auto tree_force_hist = Histogram(no_bins, g_system, true);
-
-    for (const auto &shell : tree_force_hist.m_shells) {
-        auto tf = shell.get_avg_tree_force();
-        tree_force.emplace_back(System::fit_log_to_plot(tf));
-        idx.emplace_back(shell.m_lower_inc);
-    }
-
-    mglGraph gr(0, 3000, 2000);
-    gr.SetFontSize(2);
-
-    mglData x_2 = idx;
-    mglData tree_y = tree_force;
-    mglData direct_y = direct_force;
-    mglData hern_y = analytic_force;
-
-    const auto y_min = std::min(tree_y.Minimal(), direct_y.Minimal());
-    const auto y_max = std::max(tree_y.Maximal(), direct_y.Maximal());
-
-    gr.SetRange('x', x_2);
-    gr.SetRange('y', y_min, y_max);
-
-    gr.SetCoor(mglLogX);
-    gr.Axis();
-
-    gr.Label('x', "Radius", 0);
-    gr.Label('y', "Force", 0);
-
-    gr.Plot(x_2, tree_y, "r.");
-    gr.AddLegend(std::format("Tree Force with \\theta: {}", tolerance_angle).c_str(), "r.");
-
-    gr.Plot(x_2, direct_y, "b.");
-    gr.AddLegend(std::format("Direct Force with \\epsilon: {:e}", System::s_softening).c_str(),
-                 "b.");
-
-    gr.Plot(x_2, hern_y, "q");
-    gr.AddLegend(std::format("Hernquist Analytical Force", System::s_softening).c_str(), "q");
-
-    gr.Legend();
-    gr.WriteFrame(std::format("plots/tree_force_{}.jpg", tolerance_angle).c_str());
-    gr.WriteFrame(std::format("plots/png/tree_force_{}.png", tolerance_angle).c_str());
 }
 
 /// Creates a GIF showing the variances of the force distribution integrated via tree
@@ -272,6 +276,7 @@ auto plot_gif_steps_tree() {
     const auto kTime = g_system.m_t_cross * t_factor;
     const auto kDeltaTime = eta * g_system.m_t_cross;
     const auto no_steps = kTime / kDeltaTime;
+    std::vector<double> en_tot;
 
     // g_system.reset_system();
     // System::s_softening = System::s_softening_length / 200;
@@ -291,6 +296,14 @@ auto plot_gif_steps_tree() {
     for (double t = 0.; t < kTime; t += kDeltaTime) {
         Logging::info("step: {}/{}, t: {:e}", step, no_steps, t);
         gr.NewFrame();
+        tree.total_energy(System::k_dim_mass);
+        auto pot = tree.m_pot_energy;
+        std::cerr << "DEBUGPRINT[10]: main.cpp:297: pot=" << pot << std::endl;
+        auto kin = tree.m_kin_energy;
+        std::cerr << "DEBUGPRINT[11]: main.cpp:299: kin=" << kin << std::endl;
+        auto tot = tree.m_tot_energy;
+        en_tot.push_back(tot);
+        std::cerr << "DEBUGPRINT[12]: main.cpp:301: tot=" << tot << std::endl;
 
         std::vector<double> tree_force;
         std::vector<double> idx;
@@ -335,18 +348,25 @@ auto plot_gif_steps_tree() {
     }
 
     gr.CloseGIF();
+    return en_tot;
 }
 
 /// Creates a GIF showing the variances of the force distribution integrated via direct calculation
-auto plot_gif_steps() {
+auto plot_gif_steps(double eta, double div)
+    -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> {
     constexpr static auto no_bins = 50;
     constexpr static auto t_factor = 5;
-    constexpr auto eta = 0.01;
     const auto kTime = g_system.m_t_cross * t_factor;
     const auto kDeltaTime = eta * g_system.m_t_cross;
     const auto no_steps = kTime / kDeltaTime;
+    std::vector<double> tot_en, t_steps, virial;
 
-    constexpr auto div = 256.;
+    auto analytic_mipd = (((4 * std::numbers::pi) / 3) * g_system.m_half_mass_rad *
+                          g_system.m_half_mass_rad * g_system.m_half_mass_rad);
+    analytic_mipd /= g_system.system_int_size() * .5;
+    analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
+
+    System::s_softening_length = analytic_mipd;
 
     g_system.reset_system();
     System::s_softening = g_system.get_analytic_mipd() / div;
@@ -360,6 +380,14 @@ auto plot_gif_steps() {
     for (double t = 0.; t < kTime; t += kDeltaTime) {
         Logging::info("step: {}/{}, t: {:e}", step, no_steps, t);
         gr.NewFrame();
+        g_system.total_energy();
+        auto tot = g_system.m_tot_energy;
+        auto vir = g_system.m_delta_energy;
+        tot_en.push_back(tot);
+        t_steps.push_back(t);
+        virial.push_back(vir);
+        std::cerr << "DEBUGPRINT[12]: main.cpp:301: tot=" << tot << std::endl;
+        std::cerr << "DEBUGPRINT[1]: main.cpp:388: delta e=" << vir << std::endl;
 
         std::vector<double> numeric_dens;
         std::vector<double> direct_force;
@@ -402,8 +430,60 @@ auto plot_gif_steps() {
         gr.EndFrame();
         step++;
     }
-
     gr.CloseGIF();
+    return {t_steps, tot_en, virial};
+}
+
+auto plot_en(const std::vector<double> &t_step,
+             const std::vector<double> &en_direct,
+             double eta,
+             double div,
+             bool vir = false) {
+
+    mglGraph gr(0, 1440, 900);
+    mglData x = t_step;
+    mglData y1 = en_direct;
+
+    // double max_value = *std::max_element(en_direct.begin(), en_direct.end());
+
+    gr.SetRange('x', x);
+    // gr.SetRange('y', 0, max_value);
+    gr.SetRange('y', y1);
+
+    gr.SetFontSize(2);
+    gr.Axis();
+
+    gr.Label('x', "Time Step", 0);
+    if (vir) {
+        gr.Label('y', "\\Delta E", 0);
+    } else {
+        gr.Label('y', "E_{tot}", 0);
+    }
+
+    gr.Plot(x, y1, "r.");
+    gr.AddLegend("Direct Sum", "r.");
+
+    // Add a text box at the top right
+    gr.Legend();
+    if (vir) {
+        gr.Title(std::format("Change in Total Energy with \\eta={}, div={}", eta, div).c_str());
+        gr.WritePNG(std::format("plots/png/change_energy_{}_{}.png", eta, div).c_str());
+
+    } else {
+        gr.Title(std::format("Numerical Relaxation with eta={}, div={}", eta, div).c_str());
+        gr.WritePNG(std::format("plots/png/num_relax_en_{}_{}.png", eta, div).c_str());
+    }
+}
+auto comp_cost() -> void {
+    BoundingCube root_cube = g_system.calc_overall_bounding_cube();
+    double tolerance_angle = 1.0;
+    TreeCode tree = TreeCode(root_cube, g_system.m_particles, tolerance_angle);
+    tree.build();
+    tree.tree_walk();
+    auto mp = tree.m_count_mp_inter;
+    std::cerr << "DEBUGPRINT[5]: main.cpp:422: mp=" << mp / g_system.system_int_size() << std::endl;
+    auto ds = tree.m_count_ds_inter;
+    std::cerr << "DEBUGPRINT[6]: main.cpp:424: ds=" << ds / g_system.system_int_size() << std::endl;
 }
 
 auto main(const int argc, const char *const argv[]) -> int {
@@ -413,6 +493,7 @@ auto main(const int argc, const char *const argv[]) -> int {
     }
     // initialize the g_system variable
     g_system.init_system(argv[1]);
+    // g_system.init_energy();
 
     // ============================================================================================
     // task 1
@@ -431,8 +512,25 @@ auto main(const int argc, const char *const argv[]) -> int {
 
     // plot_do_steps();
     // tree_code();
-    plot_gif_steps();
-    g_system.animate_particles();
+    // plot_gif_steps();
+    // g_system.animate_particles();
+
+    // auto etas = {0.1, 0.01};
+    // auto etas = {0.1};
+    // auto etas = {0.01};
+
+    // auto divs = {1.};
+    // auto divs = {100.};
+    // auto divs = {250,};
+    // for (auto eta : etas) {
+    //     for (auto div : divs) {
+    //         auto direct_en = plot_gif_steps(eta, div);
+    //         plot_en(std::get<0>(direct_en), std::get<1>(direct_en), eta, div);
+    //         plot_en(std::get<0>(direct_en), std::get<2>(direct_en), eta, div, true);
+    //     }
+    // }
+    // auto tree_en = plot_gif_steps_tree();
+    // comp_cost();
 
     Logging::info("Successfully quit!");
     return 0;
