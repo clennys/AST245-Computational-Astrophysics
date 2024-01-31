@@ -13,18 +13,14 @@ class System {
     // Static variables and constants
     //=============================================================================================
 
-    /// Non dimensional particle mass of one
-    // static constexpr double k_non_dim_mass = 1.;
     /// Dimensional Mass per particle
     static constexpr double k_dim_mass = 92.4259;
-
     /// Graviational Constant in pc * (km/s)^2 / M_\odot
     static constexpr double k_G = 4.3009172706e-3;
     /// Precalculated Mean inter-particle distance
     static constexpr double k_mean_inter_dist = 4.023775510528517;
     /// Array of divisors to use for softening
-    static constexpr auto softening_divisors = {1., 10., 20., 50., 100., 200.};
-    // static constexpr auto softening_divisors = {200.};
+    static constexpr auto softening_divisors = {1., 8., 32., 64., 128., 256., 512., 1024.};
     /// Softening length to be applied in Force calculcation. Made static, in order for other
     /// Classes to access it
     static double s_softening_length;
@@ -131,6 +127,8 @@ class System {
 
     auto particles_pos_at_step(uint idx)
         -> std::tuple<std::vector<double>, std::vector<double>, std::vector<double>>;
+
+    auto get_analytic_mipd() const -> double;
 
   private:
     /// Calculate runtime constants for system deployment

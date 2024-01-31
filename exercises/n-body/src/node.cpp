@@ -131,10 +131,8 @@ auto Node::calc_expansion_factors() -> void {
     this->m_center_of_mass = Eigen::Vector3d::Zero();
 
     for (const auto &part : this->m_particles) {
-        {
-            this->m_monopole += part.m_mass;
-            this->m_center_of_mass += part.m_position * part.m_mass;
-        }
+        this->m_monopole += part.m_mass;
+        this->m_center_of_mass += part.m_position * part.m_mass;
     }
 
     this->m_center_of_mass /= this->m_monopole;
@@ -142,25 +140,23 @@ auto Node::calc_expansion_factors() -> void {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             for (const auto &part : this->m_particles) {
-                {
-                    Eigen::Vector3d d_part_com = this->m_center_of_mass - part.m_position;
-                    m_quadrupole(i, j) +=
-                        part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
-                                       kronecker_delta(i, j) * d_part_com.squaredNorm());
-                }
+                Eigen::Vector3d d_part_com = this->m_center_of_mass - part.m_position;
+                m_quadrupole(i, j) +=
+                    part.m_mass * (3 * d_part_com(i) * d_part_com(j) -
+                                   kronecker_delta(i, j) * d_part_com.squaredNorm());
             }
         }
     }
 }
 
-// TODO: (dhub) Verify formula -> In book they use radius, can we use the cube side length?
-// opening angle should be << 1
+// TODO: (dhub) Verify formula -> In book they use radius, can we use the cube side length? opening
+// angle should be << 1
 auto Node::calc_opening_angle(const Particle3D &part) const -> double {
     // NOTE: (dhub) Per construction this is always positive cube(1,0,0).x() >= cube(0,0,0).(x)
     double cube_side = m_bounding_cube(1, 0, 0).x() - m_bounding_cube(0, 0, 0).x();
     double dist_part_com = (part.m_position - m_center_of_mass).norm();
-    // auto cube_side / dist_part_com;
-    return std::abs(std::atan2(cube_side, dist_part_com));
+    return std::abs(cube_side / dist_part_com);
+    // return std::abs(std::atan(cube_side / dist_part_com));
 }
 
 auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
@@ -169,8 +165,7 @@ auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
     auto dist_norm = dist_p_com.norm();
 
     Eigen::Vector3d f_monopole_vec =
-        // (m_monopole * dist_p_com * part.m_mass) / (dist_norm * dist_norm * dist_norm);
-        -(m_monopole * dist_p_com) / (dist_norm * dist_norm * dist_norm);
+        (m_monopole * dist_p_com * part.m_mass) / (dist_norm * dist_norm * dist_norm);
 
     assert(not f_monopole_vec.hasNaN());
 
@@ -181,16 +176,14 @@ auto Node::multipole_expansion(const Particle3D &part) -> Eigen::Vector3d {
 
     const Eigen::Vector3d f_quadrupole_vec = Qy * distnorm4inverse + Q_magn;
 
-    return f_monopole_vec + f_quadrupole_vec;
+    return -f_monopole_vec + f_quadrupole_vec;
 }
 
 Node::~Node() {
-    // Logging::dbg("Destructor of Node called");
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
                 if (m_children(i, j, k)) {
-                    // Logging::dbg("children deleted");
                     delete m_children(i, j, k);
                 }
             }

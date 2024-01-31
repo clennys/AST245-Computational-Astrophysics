@@ -59,10 +59,17 @@ auto System::init_system(const std::string_view &path_name) -> void {
     //     -1 / (std::sqrt(this->m_max_rad * this->m_max_rad +
     //                     System::k_mean_inter_dist * System::k_mean_inter_dist));
 
+    // System::s_softening_length =
+    //     -(this->m_max_rad * this->m_max_rad +
+    //       (3. / 2.) * System::k_mean_inter_dist * System::k_mean_inter_dist) /
+    //     std::pow(std::sqrt(this->m_max_rad * this->m_max_rad +
+    //                        System::k_mean_inter_dist * System::k_mean_inter_dist),
+    //              3);
+
     System::s_softening_length =
-        -(this->m_max_rad * this->m_max_rad +
+        -(this->m_half_mass_rad * this->m_half_mass_rad +
           (3. / 2.) * System::k_mean_inter_dist * System::k_mean_inter_dist) /
-        std::pow(std::sqrt(this->m_max_rad * this->m_max_rad +
+        std::pow(std::sqrt(this->m_half_mass_rad * this->m_half_mass_rad +
                            System::k_mean_inter_dist * System::k_mean_inter_dist),
                  3);
 
@@ -215,6 +222,7 @@ auto System::precalc_direct_initial_force() -> void {
     // TODO: (aver) we could merge this with the solver step, where the initial calculation ignores
     // updating position and velocity
     Logging::info("Calculating initial direct forces...");
+    Logging::info("Softening: {}", System::s_softening);
 #if 1
     // with omp the 'slower' comparison based loop is much faster with omp (~2s)
 #pragma omp parallel for
@@ -248,18 +256,23 @@ auto System::precalc_direct_initial_force() -> void {
 #endif
 }
 
+/// Kick-Drift-Kick
+#define KDK
+
 auto System::solver_do_step(const double delta_time) -> void {
-#pragma omp parallel for shared(m_particles)
+#pragma omp parallel for schedule(dynamic)
     for (auto &part : m_particles) {
 
+#ifdef KDK
         // First leap, get mid velocity
         const auto velocity_mid =
             part.m_velocity + (part.m_direct_force / part.m_mass) * delta_time * .5;
         // Update position for force calculation
         part.m_position += velocity_mid * delta_time;
-
+#else
         // r half
-        // part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+#endif
 
         auto force_new = Eigen::Vector3d().setZero();
         // update forces at new position
@@ -268,18 +281,19 @@ auto System::solver_do_step(const double delta_time) -> void {
                 continue;
             force_new += part.calc_direct_force_with_part(other);
         }
-
         // update the force
-        // part.update_direct_force(force_new);
-        part.m_direct_force = force_new;
+        part.update_direct_force(force_new);
 
+#ifdef KDK
         // set new velocity, completing leap-frog
         part.m_velocity = velocity_mid + (part.m_direct_force / part.m_mass) * delta_time * .5;
-        part.historize_part_state();
 
+#else
         // v n+1
-        // part.m_velocity = part.m_velocity + delta_time * (part.m_direct_force/part.m_mass);
-        // part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+        part.m_velocity = part.m_velocity + delta_time * (part.m_direct_force / part.m_mass);
+        part.m_position = part.m_position + .5 * delta_time * part.m_velocity;
+#endif
+        part.historize_part_state();
     }
 }
 
@@ -378,20 +392,21 @@ auto System::particles_pos_at_step(uint idx)
 }
 
 auto System::animate_particles() -> void {
-    // gr.StartGIF("plots/particles.gif");
     const auto steps = m_particles[0].m_pos_history.size();
     mglGraph gr(0, 1440, 900);
+    gr.StartGIF("plots/particles.gif");
+
     gr.SetRanges(-this->m_max_rad,
                  this->m_max_rad,
                  -this->m_max_rad,
                  this->m_max_rad,
                  -this->m_max_rad,
                  this->m_max_rad);
+    gr.Rotate(50, 10);
 
     for (uint i = 0; i < steps; i++) {
-        Logging::info("Frame {}", i);
+        Logging::info("Processing frame {}", i);
         gr.NewFrame(); // start frame
-        gr.Rotate(50, 10);
         gr.Axis();
 
         const auto pos = particles_pos_at_step(i);
@@ -400,13 +415,21 @@ auto System::animate_particles() -> void {
         const mglData z = std::get<2>(pos);
 
         gr.Dots(x, y, z, "r");
-        gr.EndFrame(); // end frame
-        std::stringstream ss;
-        ss << "plots/animation/"
-           << "frame-" << i << ".png";
-        auto filename = ss.str();
-        gr.WriteFrame(filename.c_str()); // save frame
-        // gr.EndFrame();
+
+        // std::stringstream ss;
+        // ss << "plots/animation/"
+        //    << "frame-" << i << ".png";
+        // auto filename = ss.str();
+        // gr.WriteFrame(filename.c_str()); // save frame
+        gr.EndFrame();
     }
-    // gr.CloseGIF();
+    gr.CloseGIF();
+}
+
+auto System::get_analytic_mipd() const -> double {
+    auto analytic_mipd = (((4 * std::numbers::pi) / 3) * this->m_half_mass_rad *
+                          this->m_half_mass_rad * this->m_half_mass_rad);
+    analytic_mipd /= this->system_int_size();
+    analytic_mipd = std::pow(analytic_mipd, 1. / 3.);
+    return analytic_mipd;
 }
