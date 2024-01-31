@@ -37,3 +37,5 @@ auto Particle3D::calc_direct_force_with_part(const Particle3D &other_part) const
     // here as well
     return -force_magn * diff_part;
 }
+
+auto Particle3D::historize_part_state() -> void { m_pos_history.push_back(m_position); }

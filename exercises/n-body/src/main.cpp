@@ -70,6 +70,7 @@ auto plot_rho_step_1() {
     gr.SetRange('y', y_min, y_max);
     gr.SetCoor(mglLogLog);
     gr.Axis();
+    gr.SetCoor(mglLogLog);
 
     gr.Label('x', "Radius", 0);
     gr.Label('y', "Density", 0);
@@ -97,7 +98,7 @@ auto plot_forces_step_2() {
     constexpr auto no_bins = 50;
 
 // This should be a one time calculation and then save it in the System class
-#if 0
+#if 1
     auto mean_inter_idst = g_system.precalc_mean_inter_part_dist();
     Logging::info("Mean inter-particle distance: {}", mean_inter_idst);
 
@@ -463,6 +464,7 @@ auto main(const int argc, const char *const argv[]) -> int {
     // plot_do_steps();
     // tree_code();
     plot_gif_steps();
+    g_system.animate_particles();
 
     Logging::info("Successfully quit!");
     return 0;
