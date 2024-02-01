@@ -1,4 +1,4 @@
-# Computational Astrophysics HS23
+# AST245 - Computational Astrophysics HS23
 
 ## [Kepler based Integrations](./exercises/kepler)
 
@@ -14,8 +14,6 @@ Comparison of Analytic, Direct force Summation and Tree-Code techniques.
 
 ## Related Repositories
 
-[Simulations in Natural Sciences 1](https://github.com/arminveres/esc201-hs22)
-
-[Simulations in Natural Sciences 2](https://github.com/arminveres/esc202-fs23)
-
-[High Performance Computing](https://github.com/arminveres/esc401-hpc-hs22)
+[ESC201 - Simulations in Natural Sciences 1](https://github.com/arminveres/esc201-hs22)
+[ESC202 - Simulations in Natural Sciences 2](https://github.com/arminveres/esc202-fs23)
+[ESC401 - High Performance Computing](https://github.com/arminveres/esc401-hpc-hs22)
