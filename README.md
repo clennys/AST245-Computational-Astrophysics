@@ -15,5 +15,7 @@ Comparison of Analytic, Direct force Summation and Tree-Code techniques.
 ## Related Repositories
 
 [ESC201 - Simulations in Natural Sciences 1](https://github.com/arminveres/esc201-hs22)
+
 [ESC202 - Simulations in Natural Sciences 2](https://github.com/arminveres/esc202-fs23)
+
 [ESC401 - High Performance Computing](https://github.com/arminveres/esc401-hpc-hs22)
