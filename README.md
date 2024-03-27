@@ -1,5 +1,6 @@
 # AST245 - Computational Astrophysics HS23
-This project was created for the course AST245 - Computational Astrophysics HS23 in collaboration with my good friend @arminveres .
+This project was created for the course AST245 - Computational Astrophysics HS23 in collaboration with my good friend [@arminveres](https://github.com/arminveres).
+For more details about the project checkout our [presentations](presentation/pdf)
 
 ## [Kepler based Integrations](./exercises/kepler)
 
